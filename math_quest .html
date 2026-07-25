@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg-deep:#12142B;
+  --panel:#1D2044;
+  --panel-2:#262A55;
+  --cyan:#4EE2EC;
+  --magenta:#FF5FA2;
+  --yellow:#FFD23F;
+  --green:#6BFFB0;
+  --text:#F2F0FF;
+  --text-dim:#A9A6D6;
+  --danger:#FF6B6B;
+  --radius:22px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:radial-gradient(circle at 50% 0%, #23265A 0%, var(--bg-deep) 60%);
+  font-family:'Nunito',sans-serif;
+  color:var(--text);
+  min-height:100vh;
+  padding:16px;
+}
+.display{font-family:'Baloo 2',sans-serif;}
+#app{max-width:640px;margin:0 auto;}
+
+/* ---- HUD ---- */
+.hud{
+  display:flex;align-items:center;gap:10px;
+  background:var(--panel);border-radius:18px;
+  padding:10px 14px;margin-bottom:14px;
+  border:2px solid var(--panel-2);
+}
+.hud .lvl{
+  background:var(--magenta);color:#3A0A22;font-family:'Baloo 2';font-weight:700;
+  border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;box-shadow:0 0 0 3px #ffffff22;
+}
+.hud .xpwrap{flex:1;min-width:0;}
+.hud .xpbar-bg{background:#0E1030;border-radius:10px;height:14px;overflow:hidden;border:1px solid #000;}
+.hud .xpbar-fill{background:linear-gradient(90deg,var(--cyan),var(--green));height:100%;transition:width .4s ease;}
+.hud .xplabel{font-size:11px;color:var(--text-dim);margin-top:2px;}
+.hud .chip{
+  display:flex;align-items:center;gap:4px;background:var(--panel-2);
+  border-radius:12px;padding:6px 10px;font-family:'Baloo 2';font-size:15px;font-weight:600;flex-shrink:0;
+}
+.hud .streak-chip{color:var(--yellow);}
+.hud .coin-chip{color:var(--yellow);}
+
+/* ---- buttons ---- */
+button{font-family:'Nunito',sans-serif;cursor:pointer;border:none;}
+.btn{
+  background:var(--panel-2);color:var(--text);border-radius:16px;
+  padding:14px 20px;font-weight:800;font-size:16px;
+  border:2px solid #ffffff18;transition:transform .12s ease, background .15s ease;
+}
+.btn:active{transform:scale(0.94);}
+.btn-primary{background:var(--cyan);color:#052A2D;}
+.btn-primary:hover{background:#6ceaf3;}
+.btn-magenta{background:var(--magenta);color:#3A0A22;}
+.btn-yellow{background:var(--yellow);color:#4A3600;}
+.btn-green{background:var(--green);color:#003D22;}
+.btn-ghost{background:transparent;border:2px solid #ffffff33;color:var(--text-dim);}
+.btn-block{width:100%;display:block;}
+.btn-lg{font-size:20px;padding:18px 24px;border-radius:20px;}
+
+/* ---- screens ---- */
+.card{
+  background:var(--panel);border-radius:var(--radius);
+  padding:22px;border:2px solid var(--panel-2);
+}
+.center{text-align:center;}
+h1.title{
+  font-family:'Baloo 2';font-size:42px;margin:6px 0 2px;
+  background:linear-gradient(90deg,var(--cyan),var(--green));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-align:center;
+}
+.subtitle{color:var(--text-dim);text-align:center;margin:0 0 20px;font-weight:700;}
+.mascot{font-size:70px;line-height:1;text-align:center;margin-bottom:6px;filter:drop-shadow(0 0 14px #00000055);}
+.bubble{
+  background:var(--panel-2);border-radius:16px;padding:12px 16px;
+  font-weight:700;font-size:15px;text-align:center;margin:0 auto 14px;max-width:90%;
+  border:2px solid #ffffff14;
+}
+
+/* topic grid */
+.topicgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.topicnode{
+  background:var(--panel-2);border-radius:18px;padding:14px 10px;text-align:center;
+  border:2px solid #ffffff14;transition:transform .12s ease;
+}
+.topicnode:active{transform:scale(0.95);}
+.topicnode .emo{font-size:34px;}
+.topicnode .name{font-family:'Baloo 2';font-weight:600;font-size:14px;margin:4px 0 2px;}
+.topicnode .stars{font-size:12px;color:var(--yellow);letter-spacing:1px;}
+.topicnode.recommended{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan);}
+
+/* problem area */
+.problembox{text-align:center;margin:10px 0 18px;}
+.promptline{font-family:'Baloo 2';font-size:30px;margin-top:10px;}
+.bignum{font-family:'Baloo 2';font-size:32px;}
+.opchip{color:var(--yellow);}
+.opchip.big{font-size:34px;}
+.dotrow{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;max-width:220px;}
+.dot{font-size:18px;}
+.blockvisual{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;}
+.blockgroup{text-align:center;}
+.blocklabel{font-family:'Baloo 2';font-size:15px;color:var(--text-dim);}
+.fruitvisual{display:inline-block;text-align:left;}
+.fruitrow{font-size:22px;letter-spacing:2px;}
+.cookies{font-size:22px;max-width:280px;margin:0 auto;word-break:break-all;}
+.groupline{font-size:13px;color:var(--text-dim);margin-top:4px;}
+.fracbar{font-size:26px;letter-spacing:2px;}
+.decbar-track{background:#0E1030;border:2px solid #000;border-radius:10px;height:28px;width:220px;margin:8px auto;overflow:hidden;}
+.decbar-fill{background:linear-gradient(90deg,var(--green),var(--cyan));height:100%;}
+
+/* keypad */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:260px;margin:0 auto;}
+.key{
+  background:var(--panel-2);color:var(--text);font-family:'Baloo 2';font-size:22px;font-weight:600;
+  border-radius:14px;padding:14px 0;border:2px solid #ffffff14;
+}
+.key:active{transform:scale(0.92);}
+.answerbox{
+  font-family:'Baloo 2';font-size:28px;text-align:center;background:var(--panel-2);
+  border-radius:14px;padding:10px;margin:0 auto 12px;max-width:260px;min-height:22px;border:2px solid #ffffff20;
+  letter-spacing:1px;
+}
+.choicegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin:0 auto;}
+
+/* feedback */
+.feedback{text-align:center;font-family:'Baloo 2';font-size:22px;margin:10px 0;min-height:30px;}
+.feedback.good{color:var(--green);}
+.feedback.bad{color:var(--danger);}
+.floatxp{
+  position:absolute;font-family:'Baloo 2';font-weight:700;color:var(--green);font-size:18px;
+  animation:floatup 1s ease forwards;pointer-events:none;
+}
+@keyframes floatup{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-40px);}}
+@keyframes pop{0%{transform:scale(0.7);opacity:0;}60%{transform:scale(1.08);opacity:1;}100%{transform:scale(1);}}
+.pop{animation:pop .35s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+.shake{animation:shake .3s ease;}
+
+.modal-bg{position:fixed;inset:0;background:#000000aa;display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.modal{background:var(--panel);border-radius:22px;padding:24px;max-width:420px;width:100%;border:2px solid var(--panel-2);}
+.steplist{text-align:left;margin:14px 0;padding-left:0;list-style:none;}
+.steplist li{background:var(--panel-2);border-radius:12px;padding:10px 14px;margin-bottom:8px;font-weight:700;font-size:15px;}
+
+.rowbtns{display:flex;gap:10px;margin-top:10px;}
+.rowbtns .btn{flex:1;}
+
+.hiddenscreen{display:none;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.small{font-size:13px;color:var(--text-dim);}
+.linkbtn{background:none;color:var(--text-dim);text-decoration:underline;font-weight:700;font-size:13px;}
+
+/* dashboard */
+.dashrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.dashbar-track{background:#0E1030;border-radius:8px;height:14px;flex:1;margin:0 10px;overflow:hidden;}
+.dashbar-fill{background:var(--cyan);height:100%;}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.statcard{background:var(--panel-2);border-radius:14px;padding:12px;text-align:center;}
+.statcard .n{font-family:'Baloo 2';font-size:24px;}
+.statcard .l{font-size:12px;color:var(--text-dim);}
+.sesslist{max-height:180px;overflow-y:auto;}
+.sessrow{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #ffffff10;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ======================= DATA / CONFIG ======================= */
+const TOPICS = [
+  {id:'addsub', name:'Add & Subtract', emoji:'➕'},
+  {id:'mult',   name:'Times Tables',   emoji:'✖️'},
+  {id:'div',    name:'Division',      emoji:'➗'},
+  {id:'frac',   name:'Fractions',     emoji:'🍕'},
+  {id:'multidigit', name:'Big Multiply', emoji:'🔢'},
+  {id:'dec',    name:'Decimals',      emoji:'💯'},
+  {id:'money',  name:'Money Math',    emoji:'💰'},
+  {id:'word',   name:'Word Missions', emoji:'🧩'},
+];
+const TOPIC_MAP = Object.fromEntries(TOPICS.map(t=>[t.id,t]));
+
+const COACH_LINES = {
+  idle: ['Ready when you are.', "Let's go earn some XP.", 'Pick a mission!'],
+  correct: ["LET'S GO!", 'Nailed it!', 'Boom! Correct!', 'You crushed that!', 'Yes! Nice work!'],
+  wrong1: ["Not this time — here's what happened:", 'So close! Try again?'],
+  wrong2: ["No rush — let's break it down."],
+  hint: ["Here's a clue:"],
+  levelup: ['LEVEL UP! New missions unlocked!'],
+  streak: ['ON FIRE! Streak bonus!'],
+};
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+
+/* ======================= STORAGE ======================= */
+const STORAGE_PREFIX = 'mathquest:';
+const Store = {
+  async getJSON(key, fallback){
+    try{
+      const v = localStorage.getItem(STORAGE_PREFIX+key);
+      return v ? JSON.parse(v) : fallback;
+    }catch(e){ return fallback; }
+  },
+  async setJSON(key, val){
+    try{ localStorage.setItem(STORAGE_PREFIX+key, JSON.stringify(val)); }
+    catch(e){ console.error('storage set failed', e); }
+  }
+};
+
+/* ======================= GOOGLE SHEETS SYNC ======================= */
+const GOOGLE_CLIENT_ID = '223042590504-sd7vqb9snfo6m659cfg7mtog73qquns7.apps.googleusercontent.com';
+const SPREADSHEET_ID = '1s2CehFrPmkBovfFfxPntag4qgXuz0VlV0PZ7HIincFY';
+const SHEET_RANGE = 'Sheet1!A:A';
+let tokenClient = null;
+let googleAccessToken = null;
+let googleConnected = false;
+
+function waitForGoogle(cb, tries){
+  tries = tries||0;
+  if(window.google && google.accounts && google.accounts.oauth2){ cb(); }
+  else if(tries<50){ setTimeout(()=>waitForGoogle(cb, tries+1), 200); }
+}
+function initGoogleAuth(){
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    callback: (resp)=>{
+      if(resp && resp.access_token){
+        googleAccessToken = resp.access_token;
+        googleConnected = true;
+        updateGoogleStatusUI();
+        const expiresMs = ((resp.expires_in||3300)-60)*1000;
+        setTimeout(()=>{ googleAccessToken=null; googleConnected=false; updateGoogleStatusUI(); }, expiresMs);
+      }
+    },
+  });
+  // try a silent, non-interactive refresh in case the user already granted access before
+  try{ tokenClient.requestAccessToken({prompt:''}); }catch(e){ /* ignore, needs manual connect */ }
+}
+function connectGoogle(){
+  if(tokenClient) tokenClient.requestAccessToken({prompt:'consent'});
+}
+function updateGoogleStatusUI(){
+  const el = document.getElementById('googleStatus');
+  if(el) el.textContent = googleConnected ? '🟢 Google Sheet connected' : '⚪ Google Sheet not connected';
+  const btn = document.getElementById('btnConnectGoogle');
+  if(btn) btn.style.display = googleConnected ? 'none' : 'block';
+}
+async function appendSessionRow(rowValues){
+  if(!googleConnected || !googleAccessToken){ console.warn('Skipping sheet sync — not connected to Google.'); return; }
+  try{
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_RANGE)}:append?valueInputOption=USER_ENTERED`, {
+      method:'POST',
+      headers:{ 'Authorization':'Bearer '+googleAccessToken, 'Content-Type':'application/json' },
+      body: JSON.stringify({ values:[rowValues] }),
+    });
+  }catch(e){ console.error('Sheet sync failed', e); }
+}
+function buildSheetRow(s){
+  const dateStr = new Date().toISOString().slice(0,19).replace('T',' ');
+  const totalCW = s.correctCount + s.wrongCount;
+  const acc = totalCW>0 ? Math.round(100*s.correctCount/totalCW) : 0;
+  const topicMin = id => Math.round(((s.topicsTime[id]||0)/60)*10)/10;
+  return [
+    dateStr, Math.round((Date.now()-s.startTime)/60000), s.xpEarned, s.coinsEarned,
+    s.correctCount, s.wrongCount, acc, s.bestStreak, profile.xp, levelOf(profile.xp),
+    topicMin('addsub'), topicMin('mult'), topicMin('div'), topicMin('frac'),
+    topicMin('multidigit'), topicMin('dec'), topicMin('money'), topicMin('word'),
+  ];
+}
+
+const defaultProfile = ()=>({xp:0, coins:0, streakBest:0, totalTimeSec:0, createdAt:Date.now()});
+const defaultTopicProgress = ()=>({tier:1, streakAtTier:0, missAtTier:0, correct:0, attempts:0, timeSec:0, lastPlayed:null});
+
+let profile = defaultProfile();
+let topicProgress = {};
+let sessions = [];
+
+async function loadAll(){
+  profile = await Store.getJSON('profile', defaultProfile());
+  for(const t of TOPICS){
+    topicProgress[t.id] = await Store.getJSON('topic:'+t.id, defaultTopicProgress());
+  }
+  sessions = await Store.getJSON('sessions', []);
+}
+async function saveProfile(){ await Store.setJSON('profile', profile); }
+async function saveTopic(id){ await Store.setJSON('topic:'+id, topicProgress[id]); }
+async function saveSessions(){
+  if(sessions.length>60) sessions = sessions.slice(sessions.length-60);
+  await Store.setJSON('sessions', sessions);
+}
+
+function levelOf(xp){ return Math.floor(xp/100)+1; }
+function xpIntoLevel(xp){ return xp%100; }
+
+/* ======================= SESSION STATE ======================= */
+let session = null;
+function newSession(){
+  return {
+    startTime: Date.now(),
+    xpEarned:0, coinsEarned:0,
+    correctCount:0, wrongCount:0,
+    bestStreak:0, currentStreak:0,
+    topicsTime:{}, currentTopicId:null, currentTopicStart:null,
+  };
+}
+function switchSessionTopic(newTopicId){
+  const now = Date.now();
+  if(session.currentTopicId){
+    const elapsed = (now - session.currentTopicStart)/1000;
+    session.topicsTime[session.currentTopicId] = (session.topicsTime[session.currentTopicId]||0) + elapsed;
+    topicProgress[session.currentTopicId].timeSec += elapsed;
+    saveTopic(session.currentTopicId);
+    profile.totalTimeSec += elapsed;
+  }
+  session.currentTopicId = newTopicId;
+  session.currentTopicStart = now;
+}
+function endSessionTiming(){
+  if(session && session.currentTopicId){
+    switchSessionTopic(null);
+    session.currentTopicId = null;
+  }
+}
+
+/* ======================= PROBLEM GENERATORS ======================= */
+function blockVisual(a,op,b){
+  if(a>20||b>20) return `<div class="bignum">${a} <span class="opchip">${op}</span> ${b}</div>`;
+  const dots=(n,emo)=>`<div class="dotrow">${emo.repeat(n)}</div>`;
+  return `<div class="blockvisual">
+    <div class="blockgroup"><div class="blocklabel">${a}</div>${dots(a,'🔵')}</div>
+    <div class="opchip big">${op}</div>
+    <div class="blockgroup"><div class="blocklabel">${b}</div>${dots(b,'🟢')}</div>
+  </div>`;
+}
+function genAddSub(tier){
+  const ranges=[20,50,200,500,1000];
+  const max=ranges[Math.min(tier,5)-1];
+  const isAdd = Math.random()<0.55;
+  let a,b,answer,opSym;
+  if(isAdd){
+    a=randInt(Math.max(1,Math.floor(max*0.15)), max-1);
+    b=randInt(1, Math.max(1,max-a));
+    answer=a+b; opSym='+';
+  } else {
+    a=randInt(Math.max(2,Math.floor(max*0.2)), max);
+    b=randInt(1,a-1<1?1:a-1);
+    answer=a-b; opSym='−';
+  }
+  const visual = blockVisual(a,opSym,b);
+  const hint = opSym==='+' ? `Add the ones first, then the tens.` : `Start at ${a} and count back ${b}.`;
+  const steps = opSym==='+'
+    ? [`Line up ${a} and ${b} by place value.`, `Add the ones column first.`, `Add the tens (carry if needed).`, `${a} + ${b} = ${answer}`]
+    : [`Start with ${a}.`, `Take away ${b}, borrowing if needed.`, `${a} − ${b} = ${answer}`];
+  return {visualHTML:visual, promptText:`${a} ${opSym} ${b} = ?`, answer, hint, steps, inputType:'keypad'};
+}
+function genMult(tier){
+  let f1,f2;
+  if(tier<=1){ f1=randInt(2,5); f2=randInt(1,5); }
+  else if(tier<=2){ f1=randInt(2,10); f2=randInt(1,5); }
+  else { f1=randInt(2,10); f2=randInt(1,10); }
+  const product=f1*f2;
+  const missing = tier>=4 && Math.random()<0.6;
+  const showVisual = f1<=6 && f2<=6;
+  const visual = showVisual
+    ? `<div class="fruitvisual">${'<div class="fruitrow">'+'🍎'.repeat(f1)+'</div>'.repeat(1)}${Array(f2-1).fill('<div class="fruitrow">'+'🍎'.repeat(f1)+'</div>').join('')}</div>`
+    : `<div class="bignum">${f1} <span class="opchip">×</span> ${f2}</div>`;
+  let promptText, answer, hint;
+  if(missing){
+    if(Math.random()<0.5){ promptText=`? × ${f2} = ${product}`; answer=f1; hint=`What times ${f2} lands on ${product}?`; }
+    else { promptText=`${f1} × ? = ${product}`; answer=f2; hint=`${f1} times what lands on ${product}?`; }
+  } else {
+    promptText=`${f1} × ${f2} = ?`; answer=product;
+    hint=`${f2} groups of ${f1}. Skip count by ${f1}.`;
+  }
+  const steps=[`Picture ${f2} groups of ${f1}.`,`Count by ${f1}s, ${f2} times.`,`${f1} × ${f2} = ${product}`];
+  return {visualHTML:visual, promptText, answer, hint, steps, inputType:'keypad'};
+}
+function genDiv(tier){
+  const divisor = randInt(2, tier<=2?5:10);
+  const quotient = randInt(1, tier<=1?5:(tier<=3?10:12));
+  const dividend = divisor*quotient;
+  const showVisual = dividend<=24 && divisor<=6;
+  const visual = showVisual
+    ? `<div class="cookies">${'🍪'.repeat(dividend)}</div><div class="groupline">split into ${divisor} equal groups</div>`
+    : `<div class="bignum">${dividend} <span class="opchip">÷</span> ${divisor}</div>`;
+  const hint=`How many ${divisor}s fit in ${dividend}? Skip count by ${divisor}.`;
+  const steps=[`Split ${dividend} into ${divisor} equal groups.`,`Count how many land in each group.`,`${dividend} ÷ ${divisor} = ${quotient}`];
+  return {visualHTML:visual, promptText:`${dividend} ÷ ${divisor} = ?`, answer:quotient, hint, steps, inputType:'keypad'};
+}
+function genFrac(tier){
+  if(tier<=3){
+    const denom = [2,3,4][tier-1];
+    const shaded = randInt(1,denom);
+    const visual = `<div class="fracbar">${'🟩'.repeat(shaded)}${'⬜'.repeat(denom-shaded)}</div>`;
+    const hint = `Count the green pieces out of ${denom}.`;
+    const steps=[`Count all the parts: ${denom}.`,`Count the green parts: ${shaded}.`,`${shaded} out of ${denom} are colored.`];
+    return {visualHTML:visual, promptText:`This shape has ${denom} equal parts. How many are colored?`, answer:shaded, hint, steps, inputType:'keypad'};
+  } else if(tier===4){
+    const denom = pick([2,3,4]);
+    const shaded = randInt(1,denom);
+    const visual = `<div class="fracbar">${'🟩'.repeat(shaded)}${'⬜'.repeat(denom-shaded)}</div>`;
+    const correct = `${shaded}/${denom}`;
+    const distractSet = new Set([correct]);
+    while(distractSet.size<4){
+      const dD = pick([2,3,4]);
+      const dS = randInt(1,dD);
+      distractSet.add(`${dS}/${dD}`);
+    }
+    const choices = Array.from(distractSet).sort(()=>Math.random()-0.5);
+    const hint = `Count colored pieces, then total pieces.`;
+    const steps=[`Colored parts: ${shaded}.`,`Total parts: ${denom}.`,`The fraction is ${shaded}/${denom}.`];
+    return {visualHTML:visual, promptText:`What fraction is colored?`, answer:correct, choices, hint, steps, inputType:'choice'};
+  } else {
+    const dA=pick([2,3,4]), sA=randInt(1,dA);
+    let dB=pick([2,3,4]), sB=randInt(1,dB);
+    while(Math.abs(sA/dA - sB/dB)<0.05){ dB=pick([2,3,4]); sB=randInt(1,dB); }
+    const visualA = `<div class="fracbar">${'🟩'.repeat(sA)}${'⬜'.repeat(dA-sA)}</div>`;
+    const visualB = `<div class="fracbar">${'🟦'.repeat(sB)}${'⬜'.repeat(dB-sB)}</div>`;
+    const visual = `<div class="small" style="margin-bottom:4px;">A</div>${visualA}<div class="small" style="margin:8px 0 4px;">B</div>${visualB}`;
+    const answer = (sA/dA > sB/dB) ? 'A' : 'B';
+    const hint = `Compare how full each bar is.`;
+    const steps=[`Bar A is ${sA}/${dA} full.`,`Bar B is ${sB}/${dB} full.`,`The bigger fraction is ${answer}.`];
+    return {visualHTML:visual, promptText:`Which bar has more colored — A or B?`, answer, choices:['A','B'], hint, steps, inputType:'choice'};
+  }
+}
+function genMultiDigit(tier){
+  let a,b;
+  if(tier<=1){ a=randInt(10,50); b=randInt(2,9); }
+  else if(tier<=2){ a=randInt(20,99); b=randInt(2,9); }
+  else if(tier<=3){ a=randInt(10,40); b=randInt(10,40); }
+  else if(tier<=4){ a=randInt(100,500); b=randInt(2,9); }
+  else { a=randInt(100,300); b=randInt(10,30); }
+  const answer=a*b;
+  const visual = `<div class="bignum">${a} <span class="opchip">×</span> ${b}</div>`;
+  const hint = `Break ${b} into parts, multiply, then add.`;
+  const steps=[`Break ${b} into easier parts if needed.`,`Multiply ${a} by each part.`,`Add the partial answers.`,`${a} × ${b} = ${answer}`];
+  return {visualHTML:visual, promptText:`${a} × ${b} = ?`, answer, hint, steps, inputType:'keypad', decimal:false};
+}
+function decimalBar(value){
+  const pct=Math.round(value*100);
+  return `<div class="decbar-track"><div class="decbar-fill" style="width:${pct}%"></div></div>`;
+}
+function genDecimal(tier){
+  if(tier<=1){
+    const v = randInt(1,9)/10;
+    return {visualHTML:decimalBar(v), promptText:`What decimal is filled in?`, answer:v, hint:`Count tenths filled — it's out of 10.`,
+      steps:[`The bar is split into 10 equal parts.`,`${Math.round(v*10)} parts are filled.`,`That's ${v.toFixed(1)}.`], inputType:'keypad', decimal:true};
+  } else if(tier===2){
+    const a=randInt(1,5)/10, b=randInt(1,Math.max(1,9-Math.round(a*10)))/10;
+    const answer=+(a+b).toFixed(1);
+    return {visualHTML:`<div class="bignum">${a.toFixed(1)} <span class="opchip">+</span> ${b.toFixed(1)}</div>`, promptText:`${a.toFixed(1)} + ${b.toFixed(1)} = ?`,
+      answer, hint:`Line up the decimal points, then add.`, steps:[`Line up the decimal points.`,`Add tenths like whole numbers.`,`${a.toFixed(1)} + ${b.toFixed(1)} = ${answer.toFixed(1)}`], inputType:'keypad', decimal:true};
+  } else if(tier===3){
+    const v = randInt(1,99)/100;
+    return {visualHTML:decimalBar(v)+`<div class="small">(hundredths)</div>`, promptText:`What decimal is filled in?`, answer:v,
+      hint:`Count how full the bar is out of 100.`, steps:[`The bar is split into 100 equal parts.`,`${Math.round(v*100)} parts are filled.`,`That's ${v.toFixed(2)}.`], inputType:'keypad', decimal:true};
+  } else if(tier===4){
+    const a=randInt(1,49)/100, b=randInt(1,Math.max(1,99-Math.round(a*100)))/100;
+    const answer=+(a+b).toFixed(2);
+    return {visualHTML:`<div class="bignum">${a.toFixed(2)} <span class="opchip">+</span> ${b.toFixed(2)}</div>`, promptText:`${a.toFixed(2)} + ${b.toFixed(2)} = ?`,
+      answer, hint:`Line up the decimal points, then add.`, steps:[`Line up the decimal points.`,`Add hundredths, then tenths.`,`${a.toFixed(2)} + ${b.toFixed(2)} = ${answer.toFixed(2)}`], inputType:'keypad', decimal:true};
+  } else {
+    const vA=randInt(1,99)/100; let vB=randInt(1,99)/100;
+    while(Math.abs(vA-vB)<0.03){ vB=randInt(1,99)/100; }
+    const visual = `<div class="small" style="margin-bottom:2px;">A</div>${decimalBar(vA)}<div class="small" style="margin:6px 0 2px;">B</div>${decimalBar(vB)}`;
+    const answer = vA>vB ? 'A':'B';
+    return {visualHTML:visual, promptText:`Which decimal is bigger — A or B?`, answer, choices:['A','B'],
+      hint:`Compare how full each bar is.`, steps:[`Bar A = ${vA.toFixed(2)}`,`Bar B = ${vB.toFixed(2)}`,`Bigger is ${answer}.`], inputType:'choice'};
+  }
+}
+function genMoney(tier){
+  if(tier<=1){
+    const n = randInt(2,4);
+    const answer = n*5;
+    return {visualHTML:`<div class="bignum">${'💵$5 '.repeat(n)}</div>`, promptText:`${n} × $5 bills. Total?`, answer,
+      hint:`Skip count by 5, ${n} times.`, steps:[`Each bill is $5.`,`Count ${n} of them.`,`Total = $${answer}`], inputType:'keypad', decimal:true};
+  } else if(tier===2){
+    const bills=[10,5,5,1,1,1].sort(()=>Math.random()-0.5).slice(0,randInt(2,3));
+    const answer=bills.reduce((a,b)=>a+b,0);
+    return {visualHTML:`<div class="bignum">${bills.map(b=>'💵$'+b).join(' + ')}</div>`, promptText:`Add up the bills. Total?`, answer,
+      hint:`Add the biggest bill first.`, steps:[`Add the bills one at a time.`,`Total = $${answer}`], inputType:'keypad', decimal:true};
+  } else if(tier===3){
+    const n=randInt(2,4);
+    const answerCents=n*25;
+    return {visualHTML:`<div class="bignum">${'🪙×'+n} <span class="small">(25¢ each)</span></div>`, promptText:`${n} quarters. Total in cents?`, answer:answerCents,
+      hint:`Skip count by 25, ${n} times.`, steps:[`Each quarter is 25¢.`,`Count ${n} of them.`,`Total = ${answerCents}¢`], inputType:'keypad'};
+  } else if(tier===4){
+    const dollars=randInt(1,8), cents=pick([25,50,75,10]);
+    const answer=+(dollars + cents/100).toFixed(2);
+    return {visualHTML:`<div class="bignum">💵$${dollars} + 🪙${cents}¢</div>`, promptText:`What's the total in dollars?`, answer,
+      hint:`Add the dollars and the cents together.`, steps:[`Dollars: $${dollars}`,`Cents: ${cents}¢ = $${(cents/100).toFixed(2)}`,`Total = $${answer.toFixed(2)}`], inputType:'keypad', decimal:true};
+  } else {
+    const price=randInt(2,9), paid=Math.ceil(price/5)*5 + pick([0,5]);
+    const change=paid-price;
+    return {visualHTML:`<div class="bignum">💵$${paid} <span class="small">for a</span> 🧸$${price} <span class="small">toy</span></div>`, promptText:`How much change do you get?`, answer:change,
+      hint:`Change = what you paid minus the price.`, steps:[`You paid $${paid}.`,`The toy costs $${price}.`,`$${paid} − $${price} = $${change}`], inputType:'keypad', decimal:true};
+  }
+}
+function genWord(tier){
+  const easy = tier<=2, hard = tier>=4;
+  const templates = [
+    ()=>{ const n=randInt(2,hard?9:5); const answer=n*5;
+      return {visualHTML:`<div class="bignum">🎮 × ${n}</div>`, promptText:`Games cost $5 each. You buy ${n}. Total?`, answer, hint:`Skip count by 5.`, steps:[`Each game is $5.`,`You buy ${n}.`,`Total = $${answer}`]}; },
+    ()=>{ const a=randInt(hard?50:10,hard?200:30), b=randInt(1,a-1);
+      return {visualHTML:`<div class="bignum">🍬 ${a} − ${b}</div>`, promptText:`You have ${a} candies. You eat ${b}. How many left?`, answer:a-b, hint:`Count back from ${a}.`, steps:[`Start with ${a}.`,`Take away ${b}.`,`${a} − ${b} = ${a-b}`]}; },
+    ()=>{ const a=randInt(easy?5:20,easy?20:80), b=randInt(easy?5:20,easy?20:80);
+      return {visualHTML:`<div class="bignum">⚽ ${a} + ${b}</div>`, promptText:`Your team scores ${a} and then ${b} points. Total?`, answer:a+b, hint:`Add the two scores.`, steps:[`${a} + ${b}`,`= ${a+b}`]}; },
+    ()=>{ const d=pick([4,6,8]); const s=randInt(1,d-1);
+      return {visualHTML:`<div class="fracbar">${'🟩'.repeat(d-s)}${'⬜'.repeat(s)}</div>`, promptText:`Pizza has ${d} slices. ${s} are eaten. How many left?`, answer:d-s, hint:`Total slices minus eaten slices.`, steps:[`Start with ${d} slices.`,`${s} are eaten.`,`${d} − ${s} = ${d-s}`]}; },
+    ()=>{ const a=randInt(hard?20:5,hard?60:15), b=randInt(1,a-1);
+      return {visualHTML:`<div class="bignum">💰 $${a} − $${b}</div>`, promptText:`You have $${a}. You spend $${b}. How much left?`, answer:a-b, hint:`Subtract what you spent.`, steps:[`Start with $${a}.`,`Spend $${b}.`,`$${a} − $${b} = $${a-b}`]}; },
+    ()=>{ const n=randInt(2,hard?9:6), each=pick([2,3,4]);
+      return {visualHTML:`<div class="bignum">🐶 ${n} <span class="opchip">×</span> ${each}</div>`, promptText:`${n} dogs get ${each} treats each. How many treats total?`, answer:n*each, hint:`${n} groups of ${each}.`, steps:[`${n} groups of ${each}.`,`${n} × ${each} = ${n*each}`]}; },
+  ];
+  const p = pick(templates)();
+  return {visualHTML:p.visualHTML, promptText:p.promptText, answer:p.answer, hint:p.hint, steps:p.steps, inputType:'keypad', decimal:false};
+}
+const GENERATORS = {addsub:genAddSub, mult:genMult, div:genDiv, frac:genFrac, multidigit:genMultiDigit, dec:genDecimal, money:genMoney, word:genWord};
+
+/* ======================= APP STATE / RENDER ======================= */
+let currentProblem = null;
+let hintUsedThisProblem = false;
+let wrongAttemptsThisProblem = 0;
+let answerBuffer = '';
+let currentTopicId = null;
+
+const app = document.getElementById('app');
+
+function hud(){
+  const lvl = levelOf(profile.xp);
+  const into = xpIntoLevel(profile.xp);
+  return `<div class="hud">
+    <div class="lvl">Lv${lvl}</div>
+    <div class="xpwrap">
+      <div class="xpbar-bg"><div class="xpbar-fill" style="width:${into}%"></div></div>
+      <div class="xplabel">${into}/100 XP</div>
+    </div>
+    <div class="chip streak-chip">🔥 ${session? session.currentStreak: 0}</div>
+    <div class="chip coin-chip">🪙 ${profile.coins}</div>
+  </div>`;
+}
+
+function renderStart(){
+  app.innerHTML = `
+    ${hud()}
+    <div class="card center">
+      <div class="mascot">🤖</div>
+      <h1 class="title">MATH QUEST</h1>
+      <p class="subtitle">Earn XP. Build streaks. Level up.</p>
+      <button class="btn btn-primary btn-lg btn-block" id="btnReady">▶ Ready to Play</button>
+      <p class="small" id="googleStatus" style="margin-top:12px;">⚪ Google Sheet not connected</p>
+      <button class="btn btn-ghost btn-block" id="btnConnectGoogle" style="display:none;">🔗 Connect Google Sheet</button>
+      <div style="margin-top:10px;">
+        <button class="linkbtn" id="btnDash">📊 For Grown-Ups</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnReady').onclick = ()=>{ session = newSession(); renderTopics(); };
+  document.getElementById('btnDash').onclick = renderDashboard;
+  document.getElementById('btnConnectGoogle').onclick = connectGoogle;
+  updateGoogleStatusUI();
+  if(!googleConnected) document.getElementById('btnConnectGoogle').style.display='block';
+}
+
+function starString(tier){
+  return '⭐'.repeat(tier) + '☆'.repeat(5-tier);
+}
+
+function recommendedTopicId(){
+  let best=null, bestScore=-1;
+  for(const t of TOPICS){
+    const p = topicProgress[t.id];
+    const score = (p.lastPlayed? (Date.now()-p.lastPlayed) : Infinity);
+    if(score>bestScore || best===null){ bestScore=score; best=t.id; }
+  }
+  return best;
+}
+
+function renderTopics(){
+  const rec = recommendedTopicId();
+  app.innerHTML = `
+    ${hud()}
+    <div class="card">
+      <div class="topbar">
+        <button class="linkbtn" id="btnHome">← Home</button>
+        <span class="small">Pick a mission</span>
+      </div>
+      <div class="mascot" style="font-size:44px;">🤖</div>
+      <div class="bubble">Ready to play? Pick one — or let me choose!</div>
+      <div class="topicgrid">
+        ${TOPICS.map(t=>`
+          <div class="topicnode ${t.id===rec?'recommended':''}" data-id="${t.id}">
+            <div class="emo">${t.emoji}</div>
+            <div class="name">${t.name}</div>
+            <div class="stars">${starString(topicProgress[t.id].tier)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn btn-yellow btn-block" id="btnSurprise" style="margin-top:14px;">🎲 Surprise Me</button>
+    </div>
+  `;
+  document.getElementById('btnHome').onclick = ()=>{ finalizeSessionAndGoHome(); };
+  document.getElementById('btnSurprise').onclick = ()=>startTopic(rec);
+  document.querySelectorAll('.topicnode').forEach(el=>{
+    el.onclick = ()=>startTopic(el.dataset.id);
+  });
+}
+
+function startTopic(topicId){
+  currentTopicId = topicId;
+  switchSessionTopic(topicId);
+  topicProgress[topicId].lastPlayed = Date.now();
+  nextProblem();
+}
+
+function nextProblem(){
+  hintUsedThisProblem=false; wrongAttemptsThisProblem=0; answerBuffer='';
+  const tp = topicProgress[currentTopicId];
+  currentProblem = GENERATORS[currentTopicId](tp.tier);
+  renderPlay();
+}
+
+function renderPlay(msg, mood){
+  const topic = TOPIC_MAP[currentTopicId];
+  const face = mood || 'idle';
+  const faceEmoji = {idle:'🙂', happy:'🤩', encourage:'💪', think:'🤔', teach:'📘'}[face];
+  const bubbleText = msg || pick(COACH_LINES.idle);
+
+  let inputArea = '';
+  if(currentProblem.inputType==='choice'){
+    inputArea = `<div class="choicegrid">
+      ${currentProblem.choices.map(c=>`<button class="btn btn-magenta choiceBtn" data-val="${c}">${c}</button>`).join('')}
+    </div>`;
+  } else {
+    const keys = ['1','2','3','4','5','6','7','8','9', currentProblem.decimal?'.':'', '0','⌫'];
+    inputArea = `
+      <div class="answerbox" id="answerbox">${answerBuffer || '&nbsp;'}</div>
+      <div class="keypad">
+        ${keys.map(k=>k===''?'<div></div>':`<button class="key keyBtn" data-k="${k}">${k}</button>`).join('')}
+      </div>
+      <button class="btn btn-primary btn-block" id="btnSubmit" style="margin-top:12px;">✅ Submit</button>
+    `;
+  }
+
+  app.innerHTML = `
+    ${hud()}
+    <div class="card">
+      <div class="topbar">
+        <button class="linkbtn" id="btnQuit">← Missions</button>
+        <span class="small">${topic.emoji} ${topic.name} · Tier ${topicProgress[currentTopicId].tier}/5</span>
+      </div>
+      <div class="mascot pop">${faceEmoji}</div>
+      <div class="bubble">${bubbleText}</div>
+      <div class="problembox">
+        ${currentProblem.visualHTML}
+        <div class="promptline">${currentProblem.promptText}</div>
+      </div>
+      <div class="feedback" id="feedback"></div>
+      ${inputArea}
+      <div class="rowbtns" style="margin-top:12px;">
+        <button class="btn btn-ghost" id="btnHint">💡 Hint</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnQuit').onclick = ()=>renderTopics();
+  document.getElementById('btnHint').onclick = onHint;
+  if(currentProblem.inputType==='choice'){
+    document.querySelectorAll('.choiceBtn').forEach(b=>b.onclick=()=>submitAnswer(b.dataset.val));
+  } else {
+    document.querySelectorAll('.keyBtn').forEach(b=>b.onclick=()=>onKey(b.dataset.k));
+    document.getElementById('btnSubmit').onclick = ()=>submitAnswer(answerBuffer);
+  }
+}
+
+function onKey(k){
+  if(k==='⌫'){ answerBuffer = answerBuffer.slice(0,-1); }
+  else if(k==='.'){ if(!answerBuffer.includes('.')) answerBuffer += '.'; }
+  else { if(answerBuffer.length<6) answerBuffer += k; }
+  const box = document.getElementById('answerbox');
+  if(box) box.innerHTML = answerBuffer || '&nbsp;';
+}
+
+function onHint(){
+  hintUsedThisProblem = true;
+  renderPlay(`💡 ${currentProblem.hint}`, 'think');
+  // restore buffer visually since renderPlay resets DOM but not answerBuffer variable
+  const box = document.getElementById('answerbox');
+  if(box) box.innerHTML = answerBuffer || '&nbsp;';
+}
+
+function checkAnswer(input){
+  if(currentProblem.inputType==='choice') return input===currentProblem.answer;
+  const num = parseFloat(input);
+  if(isNaN(num)) return false;
+  return Math.abs(num - currentProblem.answer) < 0.005;
+}
+
+function submitAnswer(input){
+  if(input===''||input===undefined) return;
+  const correct = checkAnswer(input);
+  const tp = topicProgress[currentTopicId];
+
+  if(correct){
+    session.correctCount++;
+    session.currentStreak++;
+    session.bestStreak = Math.max(session.bestStreak, session.currentStreak);
+    profile.streakBest = Math.max(profile.streakBest, session.currentStreak);
+
+    let xpGain = hintUsedThisProblem ? 5 : 10;
+    if(wrongAttemptsThisProblem>=2) xpGain = 5;
+    let bonus = 0;
+    let bonusMsg = '';
+    if(session.currentStreak>0 && session.currentStreak%3===0){
+      bonus = 20;
+      bonusMsg = '🔥 ON FIRE — streak bonus +20 XP!';
+    }
+    const totalGain = xpGain + bonus;
+    const oldLevel = levelOf(profile.xp);
+    profile.xp += totalGain;
+    session.xpEarned += totalGain;
+    const newLevel = levelOf(profile.xp);
+
+    const coinGain = session.currentStreak>=5 ? 3 : 1;
+    profile.coins += coinGain;
+    session.coinsEarned += coinGain;
+
+    tp.correct++; tp.attempts++; tp.streakAtTier++; tp.missAtTier=0;
+    let tierUp = false;
+    if(tp.streakAtTier>=4 && tp.tier<5){ tp.tier++; tp.streakAtTier=0; tierUp=true; }
+    saveTopic(currentTopicId); saveProfile();
+
+    const msg = bonusMsg || pick(COACH_LINES.correct);
+    renderPlay(msg, 'happy');
+    document.getElementById('feedback').className='feedback good';
+    document.getElementById('feedback').textContent = `+${totalGain} XP  🪙+${coinGain}` + (tierUp? '  ⭐ Tier up!' : '');
+
+    if(newLevel>oldLevel){
+      setTimeout(()=>showLevelUp(newLevel), 700);
+      return;
+    }
+    if(session.correctCount % 5 === 0){
+      setTimeout(showBreakPrompt, 900);
+      return;
+    }
+    setTimeout(nextProblem, 1100);
+  } else {
+    session.wrongCount++;
+    session.currentStreak = 0;
+    wrongAttemptsThisProblem++;
+    tp.attempts++; tp.streakAtTier=0; tp.missAtTier++;
+    let tierDown=false;
+    if(tp.missAtTier>=3 && tp.tier>1){ tp.tier--; tp.missAtTier=0; tierDown=true; }
+    saveTopic(currentTopicId);
+
+    answerBuffer='';
+    if(wrongAttemptsThisProblem>=2){
+      showWalkthrough();
+    } else {
+      renderPlay(pick(COACH_LINES.wrong1), 'encourage');
+      document.getElementById('feedback').className='feedback bad';
+      document.getElementById('feedback').textContent = 'Give it another shot — no rush.';
+      const card = document.querySelector('.card');
+      card.classList.add('shake');
+      setTimeout(()=>card.classList.remove('shake'),350);
+    }
+  }
+}
+
+function showWalkthrough(){
+  const overlay = document.createElement('div');
+  overlay.className='modal-bg';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="mascot" style="font-size:50px;">📘</div>
+      <div class="bubble">${pick(COACH_LINES.wrong2)}</div>
+      <ol class="steplist">
+        ${currentProblem.steps.map(s=>`<li>${s}</li>`).join('')}
+      </ol>
+      <button class="btn btn-primary btn-block" id="btnTryAgain">Try it now</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('btnTryAgain').onclick = ()=>{
+    overlay.remove();
+    answerBuffer=''; wrongAttemptsThisProblem=2;
+    renderPlay('Give it a try!', 'idle');
+  };
+}
+
+function showLevelUp(newLevel){
+  const overlay = document.createElement('div');
+  overlay.className='modal-bg';
+  overlay.innerHTML = `
+    <div class="modal center pop">
+      <div class="mascot" style="font-size:60px;">⚡</div>
+      <h2 class="display" style="font-size:26px;">LEVEL ${newLevel}!</h2>
+      <p class="small">New missions unlocked!</p>
+      <button class="btn btn-primary btn-block" id="btnLvlContinue">Keep Going</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('btnLvlContinue').onclick = ()=>{
+    overlay.remove();
+    if(session.correctCount % 5 === 0){ showBreakPrompt(); } else { nextProblem(); }
+  };
+}
+
+function showBreakPrompt(){
+  const overlay = document.createElement('div');
+  overlay.className='modal-bg';
+  overlay.innerHTML = `
+    <div class="modal center">
+      <div class="mascot" style="font-size:50px;">🌟</div>
+      <p class="bubble">5 in a row! Keep going or take a break?</p>
+      <div class="rowbtns">
+        <button class="btn btn-green" id="btnKeepGoing">Keep Going</button>
+        <button class="btn btn-ghost" id="btnBreak">Take a Break</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('btnKeepGoing').onclick = ()=>{ overlay.remove(); nextProblem(); };
+  document.getElementById('btnBreak').onclick = ()=>{ overlay.remove(); finalizeSessionAndGoHome(); };
+}
+
+async function finalizeSessionAndGoHome(){
+  if(!session){ renderStart(); return; }
+  endSessionTiming();
+  await saveProfile();
+  const durationSec = Math.round((Date.now()-session.startTime)/1000);
+  sessions.push({
+    date: Date.now(),
+    durationSec,
+    xpEarned: session.xpEarned,
+    coinsEarned: session.coinsEarned,
+    correctCount: session.correctCount,
+    wrongCount: session.wrongCount,
+    bestStreak: session.bestStreak,
+    topicsTime: session.topicsTime,
+  });
+  await saveSessions();
+  appendSessionRow(buildSheetRow(session));
+  renderSessionEnd(session);
+  session = null;
+}
+
+function renderSessionEnd(s){
+  const mins = Math.round((Date.now()-s.startTime)/60000);
+  app.innerHTML = `
+    ${hud()}
+    <div class="card center">
+      <div class="mascot">🎉</div>
+      <h1 class="title" style="font-size:30px;">Great Session!</h1>
+      <div class="statgrid">
+        <div class="statcard"><div class="n">+${s.xpEarned}</div><div class="l">XP earned</div></div>
+        <div class="statcard"><div class="n">Lv${levelOf(profile.xp)}</div><div class="l">Level now</div></div>
+        <div class="statcard"><div class="n">🪙 ${profile.coins}</div><div class="l">Total coins</div></div>
+        <div class="statcard"><div class="n">🔥 ${s.bestStreak}</div><div class="l">Best streak</div></div>
+      </div>
+      <p class="small">${s.correctCount} correct · ${mins} min played</p>
+      <button class="btn btn-primary btn-block" id="btnAgain" style="margin-top:10px;">Play Again</button>
+      <div style="margin-top:12px;"><button class="linkbtn" id="btnDone">Done</button></div>
+    </div>
+  `;
+  document.getElementById('btnAgain').onclick = ()=>{ session=newSession(); renderTopics(); };
+  document.getElementById('btnDone').onclick = renderStart;
+}
+
+/* ======================= DASHBOARD (parent view) ======================= */
+function isoWeek(ts){
+  const d = new Date(ts);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 3 - ((d.getDay()+6)%7));
+  const week1 = new Date(d.getFullYear(),0,4);
+  return d.getFullYear()+'-W'+(1+Math.round(((d-week1)/86400000 - 3 + ((week1.getDay()+6)%7))/7));
+}
+function buildReportText(){
+  const totalTimeMin = Math.round(profile.totalTimeSec/60);
+  const lines = [];
+  lines.push(`Math Quest Progress Report — ${new Date().toLocaleDateString()}`);
+  lines.push(`Level ${levelOf(profile.xp)} · ${profile.xp} lifetime XP · Best streak ${profile.streakBest}`);
+  lines.push(`Total time played: ${totalTimeMin} min`);
+  lines.push('');
+  lines.push('By topic:');
+  TOPICS.forEach(t=>{
+    const p = topicProgress[t.id];
+    const mins = Math.round(p.timeSec/60);
+    const acc = p.attempts>0 ? Math.round(100*p.correct/p.attempts) : 0;
+    lines.push(`- ${t.name}: Tier ${p.tier}/5, ${mins} min played, ${acc}% accuracy`);
+  });
+  lines.push('');
+  lines.push('Last 5 sessions:');
+  const recent = sessions.slice().reverse().slice(0,5);
+  if(recent.length===0){ lines.push('- No sessions yet.'); }
+  recent.forEach(s=>{
+    const d = new Date(s.date).toLocaleDateString();
+    const acc = (s.correctCount+s.wrongCount)>0 ? Math.round(100*s.correctCount/(s.correctCount+s.wrongCount)) : 0;
+    lines.push(`- ${d}: ${Math.round(s.durationSec/60)} min, +${s.xpEarned} XP, ${acc}% accuracy`);
+  });
+  return lines.join('\n');
+}
+function renderDashboard(){
+  const totalTimeMin = Math.round(profile.totalTimeSec/60);
+  const maxTopicTime = Math.max(1,...TOPICS.map(t=>topicProgress[t.id].timeSec));
+  const weekly = {};
+  sessions.forEach(s=>{
+    const wk = isoWeek(s.date);
+    weekly[wk] = (weekly[wk]||0) + s.xpEarned;
+  });
+  const weeks = Object.keys(weekly).sort().slice(-6);
+  const maxWeekXp = Math.max(1,...weeks.map(w=>weekly[w]));
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="topbar">
+        <button class="linkbtn" id="btnBack">← Back</button>
+        <span class="small">Parent Dashboard</span>
+      </div>
+      <h2 class="display" style="margin-top:4px;">📊 Progress</h2>
+      <div class="statgrid">
+        <div class="statcard"><div class="n">${totalTimeMin}m</div><div class="l">total time played</div></div>
+        <div class="statcard"><div class="n">Lv${levelOf(profile.xp)}</div><div class="l">current level</div></div>
+        <div class="statcard"><div class="n">${profile.xp}</div><div class="l">lifetime XP</div></div>
+        <div class="statcard"><div class="n">🔥 ${profile.streakBest}</div><div class="l">best streak ever</div></div>
+      </div>
+
+      <h3 class="display" style="font-size:17px;">Time by topic</h3>
+      ${TOPICS.map(t=>{
+        const p = topicProgress[t.id];
+        const pct = Math.round((p.timeSec/maxTopicTime)*100);
+        const mins = Math.round(p.timeSec/60);
+        const acc = p.attempts>0 ? Math.round(100*p.correct/p.attempts) : 0;
+        return `<div class="dashrow">
+          <span class="small" style="width:120px;">${t.emoji} ${t.name}</span>
+          <div class="dashbar-track"><div class="dashbar-fill" style="width:${pct}%"></div></div>
+          <span class="small" style="width:110px;text-align:right;">${mins}m · T${p.tier} · ${acc}%</span>
+        </div>`;
+      }).join('')}
+
+      <h3 class="display" style="font-size:17px;margin-top:16px;">Weekly XP trend</h3>
+      ${weeks.length===0 ? `<p class="small">No sessions yet.</p>` : `
+      <div style="display:flex;align-items:flex-end;gap:8px;height:80px;margin-bottom:6px;">
+        ${weeks.map(w=>{
+          const h = Math.max(6, Math.round((weekly[w]/maxWeekXp)*70));
+          return `<div style="flex:1;text-align:center;">
+            <div style="background:var(--green);height:${h}px;border-radius:4px 4px 0 0;"></div>
+            <div class="small" style="font-size:10px;">${w.split('-W')[1]}</div>
+          </div>`;
+        }).join('')}
+      </div>`}
+
+      <h3 class="display" style="font-size:17px;margin-top:16px;">Recent sessions</h3>
+      <div class="sesslist">
+        ${sessions.slice().reverse().slice(0,15).map(s=>{
+          const d = new Date(s.date);
+          const dstr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+          const acc = (s.correctCount+s.wrongCount)>0 ? Math.round(100*s.correctCount/(s.correctCount+s.wrongCount)) : 0;
+          return `<div class="sessrow"><span>${dstr}</span><span>${Math.round(s.durationSec/60)}m</span><span>+${s.xpEarned}XP</span><span>${acc}% acc</span></div>`;
+        }).join('') || '<p class="small">No sessions yet — have him play a round!</p>'}
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btnCopyReport" style="margin-top:18px;">📋 Copy Report to Share</button>
+      <button class="btn btn-ghost btn-block" id="btnReset" style="margin-top:10px;">Reset all progress</button>
+    </div>
+  `;
+  document.getElementById('btnBack').onclick = renderStart;
+  document.getElementById('btnCopyReport').onclick = async ()=>{
+    const text = buildReportText();
+    try{
+      await navigator.clipboard.writeText(text);
+      alert('Report copied! Paste it into a text message or email to share it.');
+    }catch(e){
+      prompt('Copy this report:', text);
+    }
+  };
+  document.getElementById('btnReset').onclick = async ()=>{
+    if(confirm('Reset all XP, coins, and topic progress? This cannot be undone.')){
+      profile = defaultProfile();
+      for(const t of TOPICS) topicProgress[t.id] = defaultTopicProgress();
+      sessions = [];
+      await saveProfile();
+      for(const t of TOPICS) await saveTopic(t.id);
+      await saveSessions();
+      renderDashboard();
+    }
+  };
+}
+
+/* ======================= INIT ======================= */
+(async function init(){
+  app.innerHTML = `<div class="card center"><div class="mascot">🤖</div><p class="small">Loading your quest...</p></div>`;
+  await loadAll();
+  renderStart();
+  waitForGoogle(initGoogleAuth);
+})();
+</script>
+</body>
+</html>
