@@ -221,10 +221,8 @@ const Store = {
   }
 };
 
-/* ======================= GOOGLE SHEETS SYNC ======================= */
+/* ======================= GOOGLE EMAIL SYNC ======================= */
 const GOOGLE_CLIENT_ID = '223042590504-sd7vqb9snfo6m659cfg7mtog73qquns7.apps.googleusercontent.com';
-const SPREADSHEET_ID = '1s2CehFrPmkBovfFfxPntag4qgXuz0VlV0PZ7HIincFY';
-const SHEET_RANGE = 'Sheet1!A:A';
 let tokenClient = null;
 let googleAccessToken = null;
 let googleConnected = false;
@@ -237,7 +235,7 @@ function waitForGoogle(cb, tries){
 function initGoogleAuth(){
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    scope: 'https://www.googleapis.com/auth/gmail.send',
     callback: (resp)=>{
       if(resp && resp.access_token){
         googleAccessToken = resp.access_token;
@@ -256,56 +254,77 @@ function connectGoogle(){
 }
 function updateGoogleStatusUI(){
   const el = document.getElementById('googleStatus');
-  if(el) el.textContent = googleConnected ? '🟢 Google Sheet connected' : '⚪ Google Sheet not connected';
+  if(el) el.textContent = googleConnected ? '🟢 Email connected' : '⚪ Email not connected';
   const btn = document.getElementById('btnConnectGoogle');
   if(btn) btn.style.display = googleConnected ? 'none' : 'block';
 }
-let cachedSheetTitle = null;
-async function getSheetTitle(){
-  if(cachedSheetTitle) return cachedSheetTitle;
-  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties.title`, {
-    headers:{ 'Authorization':'Bearer '+googleAccessToken }
-  });
-  if(!res.ok){ throw new Error(`Could not read sheet info (HTTP ${res.status})`); }
-  const data = await res.json();
-  cachedSheetTitle = data.sheets && data.sheets[0] && data.sheets[0].properties.title;
-  if(!cachedSheetTitle) throw new Error('Could not find a sheet tab in this spreadsheet.');
-  return cachedSheetTitle;
+
+function buildEmailBody(s){
+  const lvlNow = levelOf(profile.xp);
+  const totalProblems = s.correctCount;
+  const firstTry = Math.max(0, totalProblems - s.retriedCount);
+  const firstPct = totalProblems>0 ? Math.round(100*firstTry/totalProblems) : 0;
+  const retriedPct = totalProblems>0 ? Math.round(100*s.retriedCount/totalProblems) : 0;
+  const totalSubmissions = s.correctCount + s.wrongCount;
+  const accPct = totalSubmissions>0 ? Math.round(100*s.correctCount/totalSubmissions) : 0;
+  const wrongPct = totalSubmissions>0 ? 100-accPct : 0;
+  const durationMin = Math.round((Date.now()-s.startTime)/60000);
+  const topicRows = TOPICS.map(t=>{
+    const sec = s.topicsTime[t.id]||0;
+    if(sec<1) return '';
+    return `<tr><td style="padding:4px 10px;border-bottom:1px solid #eee;">${t.emoji} ${t.name}</td><td style="padding:4px 10px;border-bottom:1px solid #eee;">${Math.round(sec/60*10)/10} min</td></tr>`;
+  }).join('');
+  return `<div style="font-family:Arial,sans-serif;color:#222;max-width:480px;">
+    <h2 style="color:#3A0A22;">🎮 Math Quest — Session Summary</h2>
+    <p><b>Date:</b> ${new Date().toLocaleString()}</p>
+    <p><b>Duration:</b> ${durationMin} min</p>
+    <p><b>Level reached:</b> ${lvlNow} &nbsp; (${profile.xp} lifetime XP, +${s.xpEarned} this session)</p>
+    <p><b>Best streak this session:</b> ${s.bestStreak} 🔥</p>
+    <h3 style="margin-bottom:4px;">Accuracy</h3>
+    <ul style="padding-left:18px;">
+      <li>✅ Correct: <b>${accPct}%</b> (${s.correctCount} of ${totalSubmissions} answers)</li>
+      <li>❌ Wrong: <b>${wrongPct}%</b> (${s.wrongCount} wrong answers)</li>
+      <li>🔁 Needed a retry/walkthrough: <b>${retriedPct}%</b> (${s.retriedCount} of ${totalProblems} problems)</li>
+      <li>🎯 Got it first try: <b>${firstPct}%</b> (${firstTry} of ${totalProblems} problems)</li>
+    </ul>
+    <h3 style="margin-bottom:4px;">Time by Topic</h3>
+    <table style="border-collapse:collapse;width:100%;">${topicRows || '<tr><td style="padding:4px 10px;">No topic time recorded</td></tr>'}</table>
+    <p style="color:#888;font-size:12px;margin-top:16px;">Sent automatically by Math Quest.</p>
+  </div>`;
 }
-async function appendSessionRow(rowValues){
-  if(!googleConnected || !googleAccessToken){
-    return {success:false, error:'Not connected to Google.'};
-  }
+function base64urlEncode(str){
+  return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function sendSessionEmail(s){
+  if(!googleConnected || !googleAccessToken){ return {success:false, error:'Not connected to Google.'}; }
   try{
-    const title = await getSheetTitle();
-    const range = `${title}!A:A`;
-    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`, {
+    const to = 'sudhakar.javangula@gmail.com';
+    const subject = `Math Quest — Session Summary (${new Date().toLocaleDateString()})`;
+    const body = buildEmailBody(s);
+    const mime = [
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=UTF-8',
+      '',
+      body,
+    ].join('\r\n');
+    const raw = base64urlEncode(mime);
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method:'POST',
       headers:{ 'Authorization':'Bearer '+googleAccessToken, 'Content-Type':'application/json' },
-      body: JSON.stringify({ values:[rowValues] }),
+      body: JSON.stringify({ raw }),
     });
     if(!res.ok){
-      const body = await res.text();
-      console.error('Sheet sync HTTP error', res.status, body);
-      return {success:false, error:`HTTP ${res.status}: ${body.slice(0,200)}`};
+      const t = await res.text();
+      console.error('Email send HTTP error', res.status, t);
+      return {success:false, error:`HTTP ${res.status}: ${t.slice(0,200)}`};
     }
     return {success:true};
   }catch(e){
-    console.error('Sheet sync failed', e);
-    return {success:false, error: e.message};
+    console.error('Email send failed', e);
+    return {success:false, error:e.message};
   }
-}
-function buildSheetRow(s){
-  const dateStr = new Date().toISOString().slice(0,19).replace('T',' ');
-  const totalCW = s.correctCount + s.wrongCount;
-  const acc = totalCW>0 ? Math.round(100*s.correctCount/totalCW) : 0;
-  const topicMin = id => Math.round(((s.topicsTime[id]||0)/60)*10)/10;
-  return [
-    dateStr, Math.round((Date.now()-s.startTime)/60000), s.xpEarned, s.coinsEarned,
-    s.correctCount, s.wrongCount, acc, s.bestStreak, profile.xp, levelOf(profile.xp),
-    topicMin('addsub'), topicMin('mult'), topicMin('div'), topicMin('frac'),
-    topicMin('multidigit'), topicMin('dec'), topicMin('money'), topicMin('word'),
-  ];
 }
 
 const defaultProfile = ()=>({xp:0, coins:0, streakBest:0, totalTimeSec:0, createdAt:Date.now()});
@@ -339,7 +358,7 @@ function newSession(){
     startTime: Date.now(),
     xpEarned:0, coinsEarned:0,
     correctCount:0, wrongCount:0,
-    bestStreak:0, currentStreak:0,
+    bestStreak:0, currentStreak:0, retriedCount:0,
     topicsTime:{}, currentTopicId:null, currentTopicStart:null,
   };
 }
@@ -701,8 +720,8 @@ function renderStart(){
       <h1 class="title">MATH QUEST</h1>
       <p class="subtitle">Earn XP. Build streaks. Level up.</p>
       <button class="btn btn-primary btn-lg btn-block" id="btnReady">▶ Ready to Play</button>
-      <p class="small" id="googleStatus" style="margin-top:12px;">⚪ Google Sheet not connected</p>
-      <button class="btn btn-ghost btn-block" id="btnConnectGoogle" style="display:none;">🔗 Connect Google Sheet</button>
+      <p class="small" id="googleStatus" style="margin-top:12px;">⚪ Email not connected</p>
+      <button class="btn btn-ghost btn-block" id="btnConnectGoogle" style="display:none;">🔗 Connect Google (for email)</button>
       <div style="margin-top:10px;">
         <button class="linkbtn" id="btnDash">📊 For Grown-Ups</button>
       </div>
@@ -907,6 +926,7 @@ function submitAnswer(input){
 
     answerBuffer='';
     if(wrongAttemptsThisProblem>=2){
+      session.retriedCount++;
       showWalkthrough();
     } else {
       renderPlay(pick(COACH_LINES.wrong1), 'encourage');
@@ -992,8 +1012,8 @@ async function finalizeSessionAndGoHome(){
     topicsTime: session.topicsTime,
   });
   await saveSessions();
-  appendSessionRow(buildSheetRow(session)).then(r=>{
-    if(!r.success) console.warn('Session sheet sync failed:', r.error);
+  sendSessionEmail(session).then(r=>{
+    if(!r.success) console.warn('Session email failed:', r.error);
   });
   renderSessionEnd(session);
   session = null;
@@ -1114,19 +1134,19 @@ function renderDashboard(){
         }).join('') || '<p class="small">No sessions yet — have him play a round!</p>'}
       </div>
 
-      <p class="small" style="margin-top:14px;" id="googleStatusDash">${googleConnected ? '🟢 Google Sheet connected' : '⚪ Google Sheet not connected'}</p>
-      <button class="btn btn-yellow btn-block" id="btnTestSync">🧪 Test Google Sheet Sync</button>
+      <p class="small" style="margin-top:14px;" id="googleStatusDash">${googleConnected ? '🟢 Email connected' : '⚪ Email not connected'}</p>
+      <button class="btn btn-yellow btn-block" id="btnTestEmail">📧 Test Email Summary</button>
       <button class="btn btn-primary btn-block" id="btnCopyReport" style="margin-top:10px;">📋 Copy Report to Share</button>
       <button class="btn btn-ghost btn-block" id="btnReset" style="margin-top:10px;">Reset all progress</button>
     </div>
   `;
   document.getElementById('btnBack').onclick = renderStart;
-  document.getElementById('btnTestSync').onclick = async ()=>{
-    if(!googleConnected){ alert('Not connected yet — go to the home screen and tap "Connect Google Sheet" first.'); return; }
-    const testRow = ['TEST '+new Date().toLocaleString(), 0,0,0,0,0,0,0, profile.xp, levelOf(profile.xp), 0,0,0,0,0,0,0,0];
-    const result = await appendSessionRow(testRow);
-    if(result.success){ alert('✅ Success! Check your Google Sheet — a test row should now be there.'); }
-    else { alert('❌ Sync failed:\n' + result.error); }
+  document.getElementById('btnTestEmail').onclick = async ()=>{
+    if(!googleConnected){ alert('Not connected yet — go to the home screen and tap "Connect Google" first.'); return; }
+    const testSession = {startTime:Date.now()-600000, xpEarned:50, coinsEarned:6, correctCount:8, wrongCount:2, bestStreak:4, retriedCount:1, topicsTime:{addsub:180, mult:220}};
+    const result = await sendSessionEmail(testSession);
+    if(result.success){ alert('✅ Success! Check sudhakar.javangula@gmail.com for the test email.'); }
+    else { alert('❌ Email failed:\n' + result.error); }
   };
   document.getElementById('btnCopyReport').onclick = async ()=>{
     const text = buildReportText();
