@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Time and Map</title>
+<meta name="theme-color" content="#2f6fb5">
+<style>
+:root{
+  --bg:#f6f7fb; --card:#ffffff; --ink:#1d2433; --muted:#5b6478; --line:#dde2ec;
+  --brand:#2f6fb5; --brand-ink:#ffffff; --good:#2e8b57; --good-bg:#e5f5ec;
+  --warn:#b7791f; --warn-bg:#fdf3e1; --bad:#c0392b; --bad-bg:#fbe9e7;
+  --c1:#cfe3f7; --c2:#a9cdf0; --c3:#7fb2e6; --c4:#4f90d6;
+  --h1:#fde2c8; --h2:#fbc995; --h3:#f6a85f; --h4:#e5853a;
+  --bar-car:#4f90d6; --bar-bus:#e5a50a; --bar-ready:#2e8b57; --bar-other:#8e6fc4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151c; --card:#1c212b; --ink:#e8ecf3; --muted:#a3acbd; --line:#2e3542;
+    --brand:#5b9be0; --brand-ink:#0d1117; --good:#5cc98a; --good-bg:#16301f;
+    --warn:#e2b04a; --warn-bg:#33280f; --bad:#ef7a6c; --bad-bg:#3a1a16;
+    --c1:#1e3550; --c2:#24466b; --c3:#2b5a89; --c4:#3471ad;
+    --h1:#4a3420; --h2:#664220; --h3:#80521f; --h4:#9c6120;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12151c; --card:#1c212b; --ink:#e8ecf3; --muted:#a3acbd; --line:#2e3542;
+  --brand:#5b9be0; --brand-ink:#0d1117; --good:#5cc98a; --good-bg:#16301f;
+  --warn:#e2b04a; --warn-bg:#33280f; --bad:#ef7a6c; --bad-bg:#3a1a16;
+  --c1:#1e3550; --c2:#24466b; --c3:#2b5a89; --c4:#3471ad;
+  --h1:#4a3420; --h2:#664220; --h3:#80521f; --h4:#9c6120;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:18px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--brand);color:var(--brand-ink);padding:14px 16px}
+header h1{margin:0;font-size:1.3rem}
+header p{margin:2px 0 0;font-size:.95rem;opacity:.9}
+nav{display:flex;gap:6px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;overflow-x:auto}
+nav button{flex:1;min-width:76px;border:0;border-radius:12px;padding:10px 8px;font-size:1rem;font-weight:600;background:transparent;color:var(--muted);cursor:pointer}
+nav button.active{background:var(--brand);color:var(--brand-ink)}
+main{max-width:860px;margin:0 auto;padding:16px}
+section.tab{display:none}
+section.tab.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 8px;font-size:1.2rem}
+.card h3{margin:12px 0 6px;font-size:1.05rem}
+.muted{color:var(--muted);font-size:.95rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:620px){.grid2{grid-template-columns:1fr}}
+.btn{display:inline-block;border:0;border-radius:14px;padding:14px 18px;font-size:1.05rem;font-weight:700;cursor:pointer;background:var(--brand);color:var(--brand-ink)}
+.btn.big{width:100%;padding:20px;font-size:1.2rem;margin:6px 0}
+.btn.ghost{background:transparent;color:var(--brand);border:2px solid var(--brand)}
+.btn.good{background:var(--good);color:#fff}
+.btn.small{padding:8px 12px;font-size:.9rem;border-radius:10px}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.choices{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.choices button{flex:1 1 30%;min-width:90px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:14px 10px;font-size:1.05rem;font-weight:600;cursor:pointer}
+.choices button.sel{border-color:var(--brand);background:var(--c1)}
+.choices button.right{border-color:var(--good);background:var(--good-bg)}
+.choices button.wrong{border-color:var(--bad);background:var(--bad-bg)}
+label{display:block;font-weight:600;margin:8px 0 4px}
+input,select{width:100%;font-size:1rem;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.feedback{border-radius:14px;padding:14px;margin-top:10px;font-size:1.1rem}
+.feedback.good{background:var(--good-bg);color:var(--ink);border-left:6px solid var(--good)}
+.feedback.warn{background:var(--warn-bg);color:var(--ink);border-left:6px solid var(--warn)}
+.bigtime{font-size:2.4rem;font-weight:800;text-align:center;margin:6px 0}
+.bars .bar-row{margin:10px 0}
+.bars .bar-label{display:flex;justify-content:space-between;font-size:.95rem;margin-bottom:4px}
+.bars .track{background:var(--bg);border-radius:10px;height:26px;overflow:hidden;border:1px solid var(--line)}
+.bars .fill{height:100%;border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.85rem;font-weight:700}
+.pill.i{background:var(--good-bg);color:var(--good)}
+.pill.h{background:var(--warn-bg);color:var(--warn)}
+.pill.n{background:var(--bad-bg);color:var(--bad)}
+.mapwrap svg{width:100%;height:auto;max-width:380px;display:block;margin:0 auto}
+.mapwrap svg circle{cursor:pointer;stroke:var(--card);stroke-width:3}
+.mapwrap svg text{pointer-events:none;fill:var(--ink);font-weight:700}
+.mapwrap svg circle.hl{stroke:var(--ink);stroke-width:5}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
+.chain span.step{background:var(--c1);border-radius:10px;padding:6px 10px;font-weight:700}
+.chain.h span.step{background:var(--h1)}
+.chain span.arrow{color:var(--muted)}
+.stars{font-size:1.4rem;letter-spacing:2px}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.gamepick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+@media (max-width:620px){.gamepick{grid-template-columns:1fr}}
+.gamepick button{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:12px;font-weight:700;font-size:1rem;cursor:pointer}
+.gamepick button.active{border-color:var(--brand);background:var(--c1)}
+.logitem{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.weekbox{border-left:6px solid var(--brand);padding:8px 12px;background:var(--bg);border-radius:8px;margin:8px 0}
+.weekbox.now{border-left-color:var(--good);background:var(--good-bg)}
+.speak{background:transparent;border:0;color:var(--brand);font-weight:700;cursor:pointer;font-size:.95rem;padding:4px}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="appTitle">My Time and Map</h1>
+  <p>How long does it take? Where is it?</p>
+</header>
+<nav id="nav">
+  <button data-tab="trips" class="active">Trips</button>
+  <button data-tab="map">Map</button>
+  <button data-tab="games">Games</button>
+  <button data-tab="parent">Parent</button>
+</nav>
+<main>
+
+<!-- ================= TRIPS ================= -->
+<section class="tab active" id="tab-trips">
+  <div class="card" id="tripStartCard">
+    <h2>Start a trip</h2>
+    <p class="muted">Tap when you leave. Tap again when you get there.</p>
+    <button class="btn big" data-start="car">Car to school</button>
+    <button class="btn big" data-start="bus">Bus home</button>
+    <button class="btn big ghost" data-start="other">Another trip</button>
+  </div>
+
+  <div class="card hidden" id="guessCard">
+    <h2 id="guessTitle">Guess first!</h2>
+    <p>How many minutes will this trip take?</p>
+    <div class="choices" id="guessChoices"></div>
+    <div id="otherNameWrap" class="hidden">
+      <label for="otherName">Where are you going?</label>
+      <input id="otherName" placeholder="e.g. Grocery store">
+    </div>
+    <button class="btn big good" id="btnGo">We are leaving now</button>
+    <button class="btn small ghost" id="btnCancelGuess">Cancel</button>
+  </div>
+
+  <div class="card hidden" id="activeCard">
+    <h2 id="activeTitle">Trip started</h2>
+    <p>We left at</p>
+    <div class="bigtime" id="activeLeft">--:--</div>
+    <p class="muted" id="activeGuess"></p>
+    <p style="text-align:center">Time so far: <b id="activeElapsed">0 min</b></p>
+    <button class="btn big good" id="btnArrive">We are here!</button>
+    <button class="btn small ghost" id="btnCancelTrip">Cancel trip</button>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <h2>Trip done!</h2>
+    <div id="resultBody"></div>
+    <button class="speak" id="btnSayResult">🔊 Read it to me</button>
+    <div style="margin-top:10px"><button class="btn" id="btnDone">OK</button></div>
+  </div>
+
+  <div class="card">
+    <h2>How long do my trips take?</h2>
+    <p class="muted">Same 1 mile to school, but the car and the bus take different times.</p>
+    <div class="bars" id="bars"></div>
+    <div class="feedback warn" id="flightNote"></div>
+  </div>
+
+  <div class="card">
+    <h2>Add a trip I already took</h2>
+    <p class="muted">Good for the bus ride: write down the times, then add them here at home.</p>
+    <div class="grid2">
+      <div>
+        <label for="mType">Trip</label>
+        <select id="mType">
+          <option value="bus">Bus home</option>
+          <option value="car">Car to school</option>
+          <option value="other">Another trip</option>
+        </select>
+      </div>
+      <div id="mOtherWrap" class="hidden">
+        <label for="mOther">Where?</label>
+        <input id="mOther" placeholder="e.g. Temple">
+      </div>
+      <div><label for="mDate">Day</label><input type="date" id="mDate"></div>
+      <div><label for="mLeft">Left at</label><input type="time" id="mLeft"></div>
+      <div><label for="mArr">Arrived at</label><input type="time" id="mArr"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" id="btnAddManual">Add trip</button></div>
+    <div id="manualMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>My trip log</h2>
+    <div id="log"></div>
+  </div>
+</section>
+
+<!-- ================= MAP ================= -->
+<section class="tab" id="tab-map">
+  <div class="card">
+    <h2>Places fit inside bigger places</h2>
+    <p class="muted">Tap a circle to hear its name. Small places are inside big places.</p>
+    <div class="grid2">
+      <div class="mapwrap">
+        <h3 style="text-align:center">Where <span class="kidName">I</span> live</h3>
+        <div id="mapHome"></div>
+      </div>
+      <div class="mapwrap">
+        <h3 style="text-align:center">Where <span class="famName">our family</span> lives</h3>
+        <div id="mapFam"></div>
+      </div>
+    </div>
+    <div class="feedback good" id="mapMsg">Tap any circle.</div>
+  </div>
+
+  <div class="card">
+    <h2>My address chain</h2>
+    <div class="chain" id="chainHome"></div>
+    <h2 style="margin-top:14px"><span class="famNameCap">Family</span>'s address chain</h2>
+    <div class="chain h" id="chainFam"></div>
+    <button class="speak" id="btnSayChains">🔊 Read both chains</button>
+  </div>
+
+  <div class="card">
+    <h2>Same or different?</h2>
+    <table>
+      <thead><tr><th>Level</th><th>Us</th><th id="thFam">Family</th><th>Same?</th></tr></thead>
+      <tbody id="compareBody"></tbody>
+    </table>
+    <p class="muted" style="margin-top:10px">Different town, different state, different country, different continent. That is why the trip to India takes about a whole day.</p>
+  </div>
+</section>
+
+<!-- ================= GAMES ================= -->
+<section class="tab" id="tab-games">
+  <div class="gamepick" id="gamePick">
+    <button data-game="slm" class="active">Short, medium, long</button>
+    <button data-game="inside">Inside what?</button>
+    <button data-game="order">Small to big</button>
+  </div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 id="gameTitle">Short, medium, or long?</h2>
+      <span class="stars" id="stars"></span>
+    </div>
+    <div id="gameArea"></div>
+  </div>
+</section>
+
+<!-- ================= PARENT ================= -->
+<section class="tab" id="tab-parent">
+  <div class="card">
+    <h2>Weekly check-in</h2>
+    <p class="muted">Once a week, ask each question and mark how he answered.</p>
+    <label for="checkDate">Date</label>
+    <input type="date" id="checkDate">
+    <div id="checkList"></div>
+    <div style="margin-top:12px"><button class="btn" id="btnSaveCheck">Save this week</button></div>
+    <div id="checkMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Progress over time</h2>
+    <div style="overflow-x:auto" id="progress"></div>
+  </div>
+
+  <div class="card">
+    <h2>8-week plan</h2>
+    <div id="planBox"></div>
+  </div>
+
+  <div class="card">
+    <h2>Settings</h2>
+    <div class="grid2">
+      <div><label for="sKid">Son's name</label><input id="sKid" placeholder="e.g. Arjun"></div>
+      <div><label for="sFam">Family in India (how he calls them)</label><input id="sFam" placeholder="e.g. Grandma and Grandpa"></div>
+      <div><label for="sReady">Getting-ready time (minutes)</label><input id="sReady" type="number" min="1" max="120"></div>
+      <div><label for="sStart">Plan start date</label><input id="sStart" type="date"></div>
+    </div>
+    <div style="margin-top:12px" class="row">
+      <button class="btn" id="btnSaveSettings">Save settings</button>
+    </div>
+    <div id="settingsMsg"></div>
+    <h3>Backup</h3>
+    <p class="muted">Data stays on this device only. Use backup to move it to another phone or computer.</p>
+    <div class="row">
+      <button class="btn small ghost" id="btnExport">Download backup</button>
+      <label class="btn small ghost" style="margin:0">Load backup<input type="file" id="fileImport" accept="application/json" class="hidden"></label>
+      <button class="btn small ghost" id="btnReset" style="color:var(--bad);border-color:var(--bad)">Erase all data</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- storage ---------- */
+var KEY = "timeMapApp.v1";
+function blank(){
+  return {
+    settings:{kid:"", fam:"Grandma and Grandpa", ready:20, start:todayStr()},
+    trips:[], active:null, checks:[], stars:0
+  };
+}
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(!raw) return blank();
+    var d = JSON.parse(raw), b = blank();
+    d.settings = Object.assign(b.settings, d.settings||{});
+    d.trips = d.trips||[]; d.checks = d.checks||[]; d.stars = d.stars||0;
+    if(d.active===undefined) d.active=null;
+    return d;
+  }catch(e){ return blank(); }
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+var S = load();
+
+/* ---------- helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function el(tag, attrs, html){
+  var e = document.createElement(tag);
+  if(attrs) for(var k in attrs){ if(k==="class") e.className=attrs[k]; else e.setAttribute(k, attrs[k]); }
+  if(html!==undefined) e.innerHTML = html;
+  return e;
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function pad(n){ return (n<10?"0":"")+n; }
+function todayStr(){ var d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function clock(d){ var h=d.getHours(), m=d.getMinutes(), ap=h>=12?"PM":"AM"; h=h%12||12; return h+":"+pad(m)+" "+ap; }
+function minsText(m){
+  m = Math.round(m);
+  if(m<60) return m+(m===1?" minute":" minutes");
+  var h=Math.floor(m/60), r=m%60;
+  return h+(h===1?" hour":" hours")+(r?" "+r+" min":"");
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function say(text){
+  try{
+    if(!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text); u.rate = 0.9;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function kid(){ return S.settings.kid || "I"; }
+function fam(){ return S.settings.fam || "our family"; }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+var TYPE_LABEL = {car:"Car to school", bus:"Bus home"};
+function tripLabel(t){ return t.type==="other" ? (t.name||"Another trip") : TYPE_LABEL[t.type]; }
+
+/* ---------- places ---------- */
+var LEVELS = ["town","state","country","continent"];
+var HOME = ["South Windsor","Connecticut","USA","North America"];
+var FAM  = ["Hyderabad","Telangana","India","Asia"];
+var DECOYS = {town:["Hartford","Boston"],state:["Massachusetts","New York"],country:["Canada","Mexico"],continent:["Europe","Africa"]};
+
+/* ---------- tabs ---------- */
+$("nav").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-tab]"); if(!b) return;
+  [].forEach.call(document.querySelectorAll("#nav button"), function(x){ x.classList.toggle("active", x===b); });
+  [].forEach.call(document.querySelectorAll("section.tab"), function(s){ s.classList.toggle("active", s.id==="tab-"+b.dataset.tab); });
+  window.scrollTo(0,0);
+});
+
+/* ================= TRIPS ================= */
+var pending = null;
+var GUESSES = [2,5,10,15,20,30,45,60];
+
+[].forEach.call(document.querySelectorAll("[data-start]"), function(b){
+  b.addEventListener("click", function(){
+    pending = {type:b.dataset.start, guess:null};
+    $("guessTitle").textContent = (b.dataset.start==="other" ? "Another trip" : TYPE_LABEL[b.dataset.start]) + ": guess first!";
+    $("otherNameWrap").classList.toggle("hidden", b.dataset.start!=="other");
+    $("otherName").value = "";
+    var gc = $("guessChoices"); gc.innerHTML = "";
+    GUESSES.forEach(function(g){
+      var x = el("button", null, g+" min");
+      x.addEventListener("click", function(){
+        pending.guess = g;
+        [].forEach.call(gc.children, function(c){ c.classList.toggle("sel", c===x); });
+      });
+      gc.appendChild(x);
+    });
+    show("guess");
+  });
+});
+$("btnCancelGuess").addEventListener("click", function(){ pending=null; show("start"); });
+$("btnGo").addEventListener("click", function(){
+  if(!pending) return;
+  S.active = {id:uid(), type:pending.type, name:pending.type==="other"?($("otherName").value.trim()||"Another trip"):"", guess:pending.guess, start:new Date().toISOString()};
+  pending = null; save(); show("active");
+});
+$("btnCancelTrip").addEventListener("click", function(){
+  if(confirm("Cancel this trip?")){ S.active=null; save(); show("start"); }
+});
+$("btnArrive").addEventListener("click", function(){
+  var a = S.active; if(!a) return;
+  var end = new Date(), mins = Math.max(1, Math.round((end - new Date(a.start))/60000));
+  var trip = {id:a.id, type:a.type, name:a.name, guess:a.guess, start:a.start, end:end.toISOString(), minutes:mins};
+  S.trips.unshift(trip); S.active=null; save();
+  showResult(trip); renderTrips();
+});
+$("btnDone").addEventListener("click", function(){ show("start"); });
+
+var lastResultText = "";
+function showResult(t){
+  var ready = S.settings.ready, parts = [], speak = [];
+  parts.push("<div class='bigtime'>"+minsText(t.minutes)+"</div>");
+  speak.push("That trip took "+minsText(t.minutes)+".");
+  if(t.guess!=null){
+    var diff = Math.abs(t.guess - t.minutes);
+    var g = diff<=2 ? "Wow, great guess! You said "+t.guess+" minutes." :
+            diff<=5 ? "Close guess! You said "+t.guess+" minutes." :
+            "You guessed "+t.guess+" minutes. Next time you will be closer!";
+    parts.push("<p>"+esc(g)+"</p>"); speak.push(g);
+  }
+  var cmp = t.minutes < ready ? "That is shorter than getting ready for school ("+ready+" minutes)." :
+            t.minutes === ready ? "That is the same as getting ready for school ("+ready+" minutes)!" :
+            "That is longer than getting ready for school ("+ready+" minutes).";
+  parts.push("<p>"+esc(cmp)+"</p>"); speak.push(cmp);
+  var avg = avgFor(t.type==="car"?"car":t.type==="bus"?"bus":null);
+  if(t.type==="bus" && avgFor("car")){ var c="The car to school takes about "+Math.round(avgFor("car"))+" minutes. The bus is slower because it stops for other kids."; if(t.minutes>avgFor("car")){parts.push("<p>"+esc(c)+"</p>"); speak.push(c);} }
+  $("resultBody").innerHTML = "<div class='feedback good'>"+parts.join("")+"</div>";
+  lastResultText = speak.join(" ");
+  show("result"); say(lastResultText);
+}
+$("btnSayResult").addEventListener("click", function(){ say(lastResultText); });
+
+function show(which){
+  $("tripStartCard").classList.toggle("hidden", which!=="start");
+  $("guessCard").classList.toggle("hidden", which!=="guess");
+  $("activeCard").classList.toggle("hidden", which!=="active");
+  $("resultCard").classList.toggle("hidden", which!=="result");
+  if(which==="active") paintActive();
+}
+function paintActive(){
+  var a = S.active; if(!a) return;
+  $("activeTitle").textContent = a.type==="other" ? a.name : TYPE_LABEL[a.type];
+  $("activeLeft").textContent = clock(new Date(a.start));
+  $("activeGuess").textContent = a.guess!=null ? "Your guess: "+a.guess+" minutes" : "";
+  $("activeElapsed").textContent = minsText(Math.floor((Date.now()-new Date(a.start))/60000));
+}
+setInterval(function(){ if(S.active && !$("activeCard").classList.contains("hidden")) paintActive(); }, 15000);
+
+function avgFor(type, name){
+  var list = S.trips.filter(function(t){ return t.type===type && (name===undefined || t.name===name); });
+  if(!list.length) return null;
+  return list.reduce(function(s,t){ return s+t.minutes; },0)/list.length;
+}
+
+/* manual entry */
+$("mDate").value = todayStr();
+$("mType").addEventListener("change", function(){ $("mOtherWrap").classList.toggle("hidden", this.value!=="other"); });
+$("btnAddManual").addEventListener("click", function(){
+  var type=$("mType").value, d=$("mDate").value, l=$("mLeft").value, r=$("mArr").value;
+  if(!d||!l||!r){ $("manualMsg").innerHTML="<div class='feedback warn'>Please fill in the day and both times.</div>"; return; }
+  var s = new Date(d+"T"+l), e = new Date(d+"T"+r);
+  var mins = Math.round((e-s)/60000);
+  if(mins<=0){ $("manualMsg").innerHTML="<div class='feedback warn'>Arrived time must be after the left time.</div>"; return; }
+  var t = {id:uid(), type:type, name:type==="other"?($("mOther").value.trim()||"Another trip"):"", guess:null, start:s.toISOString(), end:e.toISOString(), minutes:mins};
+  S.trips.push(t);
+  S.trips.sort(function(a,b){ return b.start.localeCompare(a.start); });
+  save(); renderTrips();
+  $("mLeft").value=""; $("mArr").value="";
+  $("manualMsg").innerHTML="<div class='feedback good'>Added: "+esc(tripLabel(t))+", "+minsText(mins)+".</div>";
+});
+
+function renderTrips(){
+  /* bars */
+  var rows = [];
+  var car = avgFor("car"), bus = avgFor("bus");
+  rows.push({label:"Car to school (1 mile)", v:car, color:"var(--bar-car)", hint:"tap Car to school to measure"});
+  rows.push({label:"Bus home (1 mile)", v:bus, color:"var(--bar-bus)", hint:"add a bus trip to see it"});
+  rows.push({label:"Getting ready for school", v:S.settings.ready, color:"var(--bar-ready)"});
+  var others = {};
+  S.trips.forEach(function(t){ if(t.type==="other") others[t.name]=true; });
+  Object.keys(others).slice(0,5).forEach(function(n){ rows.push({label:n, v:avgFor("other", n), color:"var(--bar-other)"}); });
+  var max = Math.max.apply(null, rows.map(function(r){ return r.v||0; }).concat([30]));
+  $("bars").innerHTML = rows.map(function(r){
+    var w = r.v ? Math.max(4, r.v/max*100) : 0;
+    var val = r.v ? "about "+minsText(r.v) : "<span class='muted'>"+(r.hint||"")+"</span>";
+    return "<div class='bar-row'><div class='bar-label'><b>"+esc(r.label)+"</b><span>"+val+"</span></div>"+
+           "<div class='track'><div class='fill' style='width:"+w+"%;background:"+r.color+"'></div></div></div>";
+  }).join("");
+  var times = Math.round(24*60/S.settings.ready);
+  $("flightNote").innerHTML = "<b>Trip to Hyderabad:</b> about one whole day (24 hours). That bar would be too long to fit on the screen! It is like getting ready for school <b>"+times+" times</b> in a row.";
+
+  /* log */
+  if(!S.trips.length){ $("log").innerHTML = "<p class='muted'>No trips yet.</p>"; return; }
+  $("log").innerHTML = "";
+  S.trips.slice(0,40).forEach(function(t){
+    var d = new Date(t.start);
+    var row = el("div",{class:"logitem"},
+      "<div><b>"+esc(tripLabel(t))+"</b> · "+minsText(t.minutes)+
+      "<div class='muted'>"+d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})+", left "+clock(d)+
+      (t.guess!=null?" · guessed "+t.guess+" min":"")+"</div></div>");
+    var del = el("button",{class:"btn small ghost","aria-label":"Delete trip"},"Delete");
+    del.addEventListener("click", function(){ if(confirm("Delete this trip?")){ S.trips = S.trips.filter(function(x){ return x.id!==t.id; }); save(); renderTrips(); } });
+    row.appendChild(del); $("log").appendChild(row);
+  });
+}
+
+/* ================= MAP ================= */
+function circleMap(names, palette, who){
+  var radii=[48,88,128,168], cx=180, cy=180, svg="<svg viewBox='0 0 360 360' role='img' aria-label='"+esc(names.join(' inside '))+"'>";
+  for(var i=3;i>=0;i--){
+    svg += "<circle data-who='"+who+"' data-i='"+i+"' cx='"+cx+"' cy='"+cy+"' r='"+radii[i]+"' fill='var(--"+palette+(i+1)+")'></circle>";
+  }
+  var ty=[cy+6, cy-radii[0]-14, cy-radii[1]-14, cy-radii[2]-14];
+  for(var j=0;j<4;j++){
+    var fs = j===0 ? 15 : 16;
+    svg += "<text x='"+cx+"' y='"+ty[j]+"' text-anchor='middle' font-size='"+fs+"'>"+esc(names[j])+"</text>";
+  }
+  return svg+"</svg>";
+}
+$("mapHome").innerHTML = circleMap(HOME,"c","home");
+$("mapFam").innerHTML = circleMap(FAM,"h","fam");
+document.querySelector("#tab-map").addEventListener("click", function(e){
+  var c = e.target.closest("circle"); if(!c) return;
+  [].forEach.call(document.querySelectorAll(".mapwrap circle"), function(x){ x.classList.remove("hl"); });
+  c.classList.add("hl");
+  var i = +c.dataset.i, arr = c.dataset.who==="home"?HOME:FAM, msg;
+  if(i<3) msg = arr[i]+" is a "+LEVELS[i]+". It is inside "+arr[i+1]+".";
+  else msg = arr[i]+" is a continent. It is the biggest circle here.";
+  if(c.dataset.who==="fam" && i===0) msg = "Hyderabad is the city where "+fam()+" live. It is inside Telangana.";
+  if(c.dataset.who==="home" && i===0) msg = "South Windsor is the town where "+(S.settings.kid||"we")+" live"+(S.settings.kid?"s":"")+". It is inside Connecticut.";
+  $("mapMsg").textContent = msg; say(msg);
+});
+function renderChains(){
+  function chain(arr){ return arr.map(function(n,i){ return "<span class='step'>"+esc(n)+"</span>"+(i<arr.length-1?"<span class='arrow'>inside →</span>":""); }).join(""); }
+  $("chainHome").innerHTML = chain(HOME);
+  $("chainFam").innerHTML = chain(FAM);
+  $("thFam").textContent = cap(fam());
+  $("compareBody").innerHTML = LEVELS.map(function(l,i){
+    return "<tr><td>"+cap(l==="town"?"town / city":l)+"</td><td>"+HOME[i]+"</td><td>"+FAM[i]+"</td><td><span class='pill n'>Different</span></td></tr>";
+  }).join("");
+  [].forEach.call(document.querySelectorAll(".kidName"), function(x){ x.textContent = kid(); });
+  [].forEach.call(document.querySelectorAll(".famName"), function(x){ x.textContent = fam(); });
+  [].forEach.call(document.querySelectorAll(".famNameCap"), function(x){ x.textContent = cap(fam()); });
+  $("appTitle").textContent = S.settings.kid ? S.settings.kid+"'s Time and Map" : "My Time and Map";
+}
+$("btnSayChains").addEventListener("click", function(){
+  say("We live in South Windsor, inside Connecticut, inside the USA, inside North America. "+cap(fam())+" live in Hyderabad, inside Telangana, inside India, inside Asia.");
+});
+
+/* ================= GAMES ================= */
+var game = "slm";
+$("gamePick").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-game]"); if(!b) return;
+  game = b.dataset.game;
+  [].forEach.call(document.querySelectorAll("#gamePick button"), function(x){ x.classList.toggle("active", x===b); });
+  nextQ();
+});
+function addStar(){ S.stars++; save(); paintStars(); }
+function paintStars(){ $("stars").textContent = "⭐ "+S.stars; }
+function nextBtn(){ var b = el("button",{class:"btn",style:"margin-top:12px"},"Next →"); b.addEventListener("click", nextQ); return b; }
+
+function slmItems(){
+  var bus = avgFor("bus"), car = avgFor("car");
+  return [
+    {name:"Car ride to school", min: car?Math.round(car):4},
+    {name:"Bus ride home", min: bus?Math.round(bus):15},
+    {name:"Getting ready for school", min:S.settings.ready},
+    {name:"Brushing teeth", min:2},
+    {name:"Drive to Hartford", min:20},
+    {name:"Watching a movie", min:120},
+    {name:"A school day", min:390},
+    {name:"Flight to Hyderabad", min:1440},
+    {name:"Eating breakfast", min:10}
+  ];
+}
+function slmCat(m){ return m<10?"Short":m<=45?"Medium":"Long"; }
+
+function nextQ(){
+  var area = $("gameArea"); area.innerHTML="";
+  if(game==="slm"){
+    $("gameTitle").textContent = "Short, medium, or long?";
+    var it = shuffle(slmItems())[0], ans = slmCat(it.min);
+    area.appendChild(el("p",{style:"font-size:1.4rem;font-weight:800;text-align:center;margin:12px 0"}, esc(it.name)));
+    area.appendChild(el("p",{class:"muted",style:"text-align:center"},"Short = less than 10 min · Medium = 10 to 45 min · Long = more than 45 min"));
+    var ch = el("div",{class:"choices"}); area.appendChild(ch);
+    var fb = el("div"); area.appendChild(fb);
+    ["Short","Medium","Long"].forEach(function(o){
+      var b = el("button",null,o);
+      b.addEventListener("click", function(){
+        if(ch.dataset.done) return;
+        if(o===ans){
+          ch.dataset.done=1; b.classList.add("right"); addStar();
+          var m = "Yes! "+it.name+" takes about "+minsText(it.min)+". That is "+ans.toLowerCase()+".";
+          fb.innerHTML="<div class='feedback good'>"+esc(m)+"</div>"; say(m); area.appendChild(nextBtn());
+        } else { b.classList.add("wrong","shake"); fb.innerHTML="<div class='feedback warn'>Not quite. Try another one!</div>"; }
+      });
+      ch.appendChild(b);
+    });
+  }
+  else if(game==="inside"){
+    $("gameTitle").textContent = "Inside what?";
+    var q = makeInsideQ();
+    area.appendChild(el("p",{style:"font-size:1.25rem;font-weight:700;margin:12px 0"}, esc(q.q)));
+    var ch2 = el("div",{class:"choices"}); area.appendChild(ch2);
+    var fb2 = el("div"); area.appendChild(fb2);
+    shuffle(q.opts).forEach(function(o){
+      var b = el("button",null,esc(o));
+      b.addEventListener("click", function(){
+        if(ch2.dataset.done) return;
+        if(o===q.a){ ch2.dataset.done=1; b.classList.add("right"); addStar(); fb2.innerHTML="<div class='feedback good'>"+esc(q.why)+"</div>"; say(q.why); area.appendChild(nextBtn()); }
+        else { b.classList.add("wrong","shake"); fb2.innerHTML="<div class='feedback warn'>Not quite. Look at the circles on the Map tab for help.</div>"; }
+      });
+      ch2.appendChild(b);
+    });
+  }
+  else {
+    $("gameTitle").textContent = "Small to big";
+    var useHome = Math.random()<0.5, arr = useHome?HOME:FAM;
+    area.appendChild(el("p",{style:"font-weight:700"},"Tap the places from the <u>smallest</u> to the <u>biggest</u>."));
+    var built = el("div",{class:"chain"+(useHome?"":" h")}); built.innerHTML="<span class='muted'>Your chain will appear here</span>";
+    area.appendChild(built);
+    var ch3 = el("div",{class:"choices"}); area.appendChild(ch3);
+    var fb3 = el("div"); area.appendChild(fb3);
+    var step = 0;
+    shuffle(arr).forEach(function(n){
+      var b = el("button",null,esc(n));
+      b.addEventListener("click", function(){
+        if(b.disabled) return;
+        if(n===arr[step]){
+          if(step===0) built.innerHTML="";
+          built.innerHTML += (step?"<span class='arrow'>inside →</span>":"")+"<span class='step'>"+esc(n)+"</span>";
+          b.disabled=true; b.classList.add("right"); step++; fb3.innerHTML="";
+          if(step===4){ addStar(); var m="Great job! "+arr.join(", inside ")+"."; fb3.innerHTML="<div class='feedback good'>"+esc(m)+"</div>"; say(m); area.appendChild(nextBtn()); }
+        } else {
+          b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+          fb3.innerHTML="<div class='feedback warn'>Not yet. Which one is the next smallest?</div>";
+        }
+      });
+      ch3.appendChild(b);
+    });
+  }
+}
+function makeInsideQ(){
+  var r = Math.random();
+  if(r<0.3){
+    var lvl = 1+Math.floor(Math.random()*3);
+    return {q:"Do "+fam()+" live in the same "+LEVELS[lvl]+" as us?", opts:["Yes","No"], a:"No",
+      why:"No. We are in "+HOME[lvl]+". "+cap(fam())+" are in "+FAM[lvl]+". A different "+LEVELS[lvl]+"!"};
+  }
+  var arr = Math.random()<0.5?HOME:FAM, other = arr===HOME?FAM:HOME;
+  var i = Math.floor(Math.random()*3), j = i+1+Math.floor(Math.random()*(3-i));
+  var opts = [arr[j], other[j], DECOYS[LEVELS[j]][Math.floor(Math.random()*2)]];
+  return {q:arr[i]+" is inside which "+LEVELS[j]+"?", opts:opts, a:arr[j], why:"Yes! "+arr[i]+" is inside "+arr[j]+"."};
+}
+
+/* ================= PARENT ================= */
+var CHECKS = [
+  {id:"car", text:"Says about how long the car ride to school takes"},
+  {id:"bus", text:"Says the bus home takes longer than the car, and why (stops)"},
+  {id:"order", text:"Puts 4 familiar trips in order, shortest to longest"},
+  {id:"guess", text:"Guesses a local trip time within 5 minutes"},
+  {id:"india", text:"Says the trip to India is very long (about a day)"},
+  {id:"home", text:"Says: South Windsor → Connecticut → USA → North America"},
+  {id:"fam", text:"Says: Hyderabad → Telangana → India → Asia"},
+  {id:"diff", text:"Explains family lives in a different country and continent"},
+  {id:"world", text:"Finds Connecticut on a US map, and USA and India on a world map"}
+];
+var LEVEL_TXT = {i:"On his own", h:"With a hint", n:"Not yet"};
+var draft = {};
+$("checkDate").value = todayStr();
+function renderCheckList(){
+  var box = $("checkList"); box.innerHTML = "";
+  CHECKS.forEach(function(c){
+    var w = el("div",{style:"margin-top:12px"},"<b>"+esc(c.text)+"</b>");
+    var ch = el("div",{class:"choices"});
+    ["i","h","n"].forEach(function(v){
+      var b = el("button",null,LEVEL_TXT[v]);
+      if(draft[c.id]===v) b.classList.add("sel");
+      b.addEventListener("click", function(){
+        draft[c.id] = draft[c.id]===v ? undefined : v;
+        [].forEach.call(ch.children, function(x){ x.classList.remove("sel"); });
+        if(draft[c.id]) b.classList.add("sel");
+      });
+      ch.appendChild(b);
+    });
+    w.appendChild(ch); box.appendChild(w);
+  });
+}
+$("btnSaveCheck").addEventListener("click", function(){
+  var res = {}; Object.keys(draft).forEach(function(k){ if(draft[k]) res[k]=draft[k]; });
+  if(!Object.keys(res).length){ $("checkMsg").innerHTML="<div class='feedback warn'>Mark at least one item first.</div>"; return; }
+  var date = $("checkDate").value || todayStr();
+  S.checks = S.checks.filter(function(c){ return c.date!==date; });
+  S.checks.push({date:date, res:res});
+  S.checks.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  save(); draft = {}; renderCheckList(); renderProgress();
+  $("checkMsg").innerHTML="<div class='feedback good'>Saved for "+esc(date)+".</div>";
+});
+function renderProgress(){
+  if(!S.checks.length){ $("progress").innerHTML="<p class='muted'>No check-ins yet. Your first one is his baseline.</p>"; return; }
+  var cols = S.checks.slice(-8);
+  var h = "<table><thead><tr><th>Skill</th>"+cols.map(function(c,i){
+    var d=new Date(c.date+"T12:00"); return "<th>"+(S.checks.length>8||i?"":"Baseline<br>")+d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+"</th>";
+  }).join("")+"</tr></thead><tbody>";
+  CHECKS.forEach(function(c){
+    h += "<tr><td>"+esc(c.text)+"</td>";
+    cols.forEach(function(col){ var v=col.res[c.id]; h += "<td>"+(v?"<span class='pill "+v+"'>"+LEVEL_TXT[v]+"</span>":"<span class='muted'>–</span>")+"</td>"; });
+    h += "</tr>";
+  });
+  h += "</tbody></table>";
+  var wrap = el("div"); wrap.innerHTML = h;
+  $("progress").innerHTML=""; $("progress").appendChild(wrap);
+  var delRow = el("div",{class:"row",style:"margin-top:8px"});
+  var del = el("button",{class:"btn small ghost"},"Delete latest check-in");
+  del.addEventListener("click", function(){ if(confirm("Delete the latest check-in?")){ S.checks.pop(); save(); renderProgress(); } });
+  delRow.appendChild(del); $("progress").appendChild(delRow);
+}
+
+var PLAN = [
+  {w:"Weeks 1–2", t:"Say the leave and arrive times on the morning drive: “We left at 7:45, now it’s 7:49. That was 4 minutes.”", g:"Learn his chain: South Windsor → Connecticut → USA → North America (Map tab, read aloud)."},
+  {w:"Weeks 3–4", t:"He reads the car clock and taps Car to school himself in the app.", g:"Nesting cups or boxes: put South Windsor inside Connecticut inside USA. Play “Small to big”."},
+  {w:"Weeks 5–6", t:"Add the bus ride home (Add a trip I already took). Compare car vs bus: same mile, bus is slower because of stops.", g:"Family chain: Hyderabad → Telangana → India → Asia. Sister can help build it. Play “Inside what?”."},
+  {w:"Weeks 7–8", t:"Guess before local trips, then check. Play “Short, medium, long”. India = very long (about a day).", g:"World map or globe: find South Windsor/Connecticut, then India and Hyderabad."}
+];
+function renderPlan(){
+  var start = new Date((S.settings.start||todayStr())+"T00:00");
+  var wk = Math.floor((Date.now()-start)/(7*86400000))+1;
+  var idx = wk<1?-1:Math.min(3, Math.floor((wk-1)/2));
+  $("planBox").innerHTML = "<p class='muted'>"+(wk>=1?"You are in <b>week "+wk+"</b>.":"The plan starts on "+esc(S.settings.start)+".")+(wk>8?" The 8 weeks are done: compare the progress table with the baseline and choose the next goals.":"")+"</p>"+
+    PLAN.map(function(p,i){
+      return "<div class='weekbox"+(i===idx&&wk<=8?" now":"")+"'><b>"+p.w+(i===idx&&wk<=8?" (now)":"")+"</b><br><b>Time & distance:</b> "+p.t+"<br><b>Geography:</b> "+p.g+"</div>";
+    }).join("")+
+    "<p class='muted'>Sister tip: let her be a quiz partner, but make sure he answers and taps the buttons himself.</p>";
+}
+
+/* settings */
+function fillSettings(){ $("sKid").value=S.settings.kid; $("sFam").value=S.settings.fam; $("sReady").value=S.settings.ready; $("sStart").value=S.settings.start; }
+$("btnSaveSettings").addEventListener("click", function(){
+  var r = parseInt($("sReady").value,10);
+  S.settings.kid = $("sKid").value.trim();
+  S.settings.fam = $("sFam").value.trim() || "Grandma and Grandpa";
+  S.settings.ready = (r>0&&r<=120)?r:20;
+  S.settings.start = $("sStart").value || todayStr();
+  save(); renderAll();
+  $("settingsMsg").innerHTML="<div class='feedback good'>Settings saved.</div>";
+});
+$("btnExport").addEventListener("click", function(){
+  var blob = new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "time-map-backup-"+todayStr()+".json"; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+});
+$("fileImport").addEventListener("change", function(){
+  var f = this.files[0]; if(!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    try{
+      var d = JSON.parse(rd.result);
+      if(!d || !d.settings || !Array.isArray(d.trips)) throw 0;
+      if(!confirm("Replace the data on this device with this backup?")) return;
+      try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){}
+      S = d; var b = blank(); S.settings = Object.assign(b.settings, S.settings); S.checks=S.checks||[]; S.stars=S.stars||0;
+      renderAll(); $("settingsMsg").innerHTML="<div class='feedback good'>Backup loaded.</div>";
+    }catch(e){ $("settingsMsg").innerHTML="<div class='feedback warn'>That file is not a backup from this app.</div>"; }
+  };
+  rd.readAsText(f); this.value="";
+});
+$("btnReset").addEventListener("click", function(){
+  if(!confirm("Erase all trips, check-ins and settings on this device? This cannot be undone.")) return;
+  S = blank(); save(); renderAll(); show("start");
+});
+
+function renderAll(){ fillSettings(); renderChains(); renderTrips(); renderCheckList(); renderProgress(); renderPlan(); paintStars(); }
+renderAll();
+show(S.active ? "active" : "start");
+nextQ();
+})();
+</script>
+</body>
+</html>
